@@ -15,7 +15,7 @@ using namespace vex;
 using namespace std;
 
 // A global instance of competition
-competition Competition;
+competition Competition; // wiener
 
 // define your global instances of motors and other devices here
 brain Thinky;
