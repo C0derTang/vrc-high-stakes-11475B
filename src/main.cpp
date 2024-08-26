@@ -10,7 +10,7 @@
 #include "vex.h"
 #include <cmath>
 
-// screw best practices, im doing this:
+// fuck best practices, im doing this:
 using namespace vex;
 using namespace std;
 
@@ -20,20 +20,19 @@ competition Competition;
 // define your global instances of motors and other devices here
 brain Thinky;
 
-//ports are zero indexed!!!
-
-motor lm1(0, true);
-motor lm2(1, true);
+motor lm1(0, false);
+motor lm2(1, false);
 motor lm3(2, false);
+motor rm1(7, true);
+motor rm2(8, true);
+motor rm3(9, true);
 
-motor rm1(3, true);
-motor rm2(4, false);
-motor rm3(5, false);
 
-motor int1(6);
-motor int2(7, true);
-motor_group intake(int1, int2);
+motor_group leftMotor1(lm1,lm2);
+motor_group rightMotor1(rm1,rm2);
 
+motor_group leftMotor(lm1, lm2, lm3);
+motor_group rightMotor(rm1, rm2, rm3);
 motor arm(12);
 motor claw(13);
 
@@ -42,6 +41,7 @@ controller sticks;
 encoder lquad = encoder(Thinky.ThreeWirePort.A);
 encoder rquad = encoder(Thinky.ThreeWirePort.B);
 encoder bquad = encoder(Thinky.ThreeWirePort.C);
+
 
 /*---------------------------------------------------------------------------*/
 /*                          Pre-Autonomous Functions                         */
@@ -57,30 +57,15 @@ void pre_auton(void) {
 
   // All activities that occur before the competition starts
   // Example: clearing encoders, setting servo positions, ...
-  lm1.setStopping(coast);
-  lm2.setStopping(coast);
-  lm3.setStopping(coast);
-  rm1.setStopping(coast);
-  rm2.setStopping(coast);
-  rm3.setStopping(coast);
-
-  intake.setStopping(hold);
-  intake.setVelocity(100, percent);
+  leftMotor.setStopping(coast);
+  rightMotor.setStopping(coast);
+  arm.setStopping(hold);
+  arm.setMaxTorque(100, percent);
+  arm.setVelocity(100, percent);
+  claw.setVelocity(100, percent);
 }
 
-void lSpin(double val){
-  lm1.spin(forward, val, voltageUnits::volt);
-  lm2.spin(forward, val, voltageUnits::volt);
-  lm3.spin(forward, val, voltageUnits::volt);
-}
-void rSpin(double val){
-  rm1.spin(forward, val, voltageUnits::volt);
-  rm2.spin(forward, val, voltageUnits::volt);
-  rm3.spin(forward, val, voltageUnits::volt);
-}
-
-
-//TODO: PID variable tuning (will take forever)
+//PID variable tuning (will take fucking forever)
 //straight
 double kP = 0.5;
 double kI = 0.2;
@@ -116,12 +101,12 @@ int drivePID(){
   while(enableDrivePID){
     if (resetDriveSensors){
       resetDriveSensors = false;
-      lm1.setPosition(0, degrees);
-      rm1.setPosition(0, degrees);
+      leftMotor.setPosition(0, degrees);
+      rightMotor.setPosition(0, degrees);
     }
 
-    int leftPos = lm1.position(degrees);
-    int rightPos = rm1.position(degrees);
+    int leftPos = leftMotor.position(degrees);
+    int rightPos = rightMotor.position(degrees);
 
     // lateral PID //////////////
     int avgPos = (leftPos + rightPos) / 2;
@@ -144,8 +129,8 @@ int drivePID(){
     /////////////////////////////
 
 
-    lSpin(lateralMotorPower + turnMotorPower);
-    rSpin(lateralMotorPower - turnMotorPower);
+    leftMotor.spin(forward, lateralMotorPower + turnMotorPower, voltageUnits::volt);
+    rightMotor.spin(forward, lateralMotorPower - turnMotorPower, voltageUnits::volt);
 
 
     prevError = error;
@@ -189,12 +174,13 @@ void autonomous(void) {
 /*  You must modify the code to add your own robot specific commands here.   */
 /*---------------------------------------------------------------------------*/
 
-
-
 void usercontrol(void) {
   enableDrivePID = false;
 
   double turnImportance = 0.5;
+
+  bool transmission = false;
+  bool tlatch = false;
 
   while (noBitches) {
     
@@ -203,16 +189,37 @@ void usercontrol(void) {
     // volts gives more power, no built in weird PID apparently
     double turnVolts = turnVal * 0.12;
     double fwdVolts = fwdVal * 0.12 * (1-(abs(turnVolts/12.0)) * turnImportance);
-
-    lSpin(fwdVolts + turnVolts);
-    rSpin(fwdVolts - turnVolts);
+    if (transmission){
+      leftMotor1.spin(forward, fwdVolts + turnVolts, voltageUnits::volt);
+      rightMotor1.spin(forward, fwdVolts - turnVolts, voltageUnits::volt);
+    }else{
+      leftMotor.spin(forward, fwdVolts + turnVolts, voltageUnits::volt);
+      rightMotor.spin(forward, fwdVolts - turnVolts, voltageUnits::volt);
+    }
 
     if (sticks.ButtonR1.pressing()){
-      intake.spin(forward);
+      arm.spin(forward);
     }else if(sticks.ButtonR2.pressing()){
-      intake.spin(reverse);
+      arm.spin(reverse);
     }else{
-      intake.stop();
+      arm.stop();
+    }
+
+    if (sticks.ButtonL1.pressing()){
+      claw.spin(forward);
+    }else if(sticks.ButtonL2.pressing()){
+      claw.spin(reverse);
+    }else{
+      claw.stop();
+    }
+
+    if (sticks.ButtonA.pressing()){
+      if (!tlatch){
+        transmission = !transmission;
+        tlatch = true;
+      }
+    }else{
+      tlatch = false;
     }
 
     wait(20, msec); // Sleep the task for a short amount of time to
