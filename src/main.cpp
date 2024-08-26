@@ -1,7 +1,7 @@
 /*----------------------------------------------------------------------------*/
 /*                                                                            */
 /*    Module:       main.cpp                                                  */
-/*    Author:       christophertang                                           */
+/*    Author:       christophertang with help from VP                         */
 /*    Created:      5/27/2024, 1:32:50 PM                                     */
 /*    Description:  V5 project                                                */
 /*                                                                            */
@@ -9,13 +9,14 @@
 
 #include "vex.h"
 #include <cmath>
+#include "vars.h"
 
 // fuck best practices, im doing this:
 using namespace vex;
 using namespace std;
 
 // A global instance of competition
-competition Competition; // wiener
+competition Competition;
 
 // define your global instances of motors and other devices here
 brain Thinky;
@@ -44,19 +45,15 @@ encoder bquad = encoder(Thinky.ThreeWirePort.C);
 
 
 /*---------------------------------------------------------------------------*/
+/*                                                                           */
 /*                          Pre-Autonomous Functions                         */
 /*                                                                           */
-/*  You may want to perform some actions before the competition starts.      */
-/*  Do them in the following function.  You must return from this function   */
-/*  or the autonomous and usercontrol tasks will not be started.  This       */
-/*  function is only called once after the V5 has been powered on and        */
-/*  not every time that the robot is disabled.                               */
 /*---------------------------------------------------------------------------*/
 
 void pre_auton(void) {
 
   // All activities that occur before the competition starts
-  // Example: clearing encoders, setting servo positions, ...
+  // Example: clearing encoders, setting servo positions, bathroom break etc.
   leftMotor.setStopping(coast);
   rightMotor.setStopping(coast);
   arm.setStopping(hold);
@@ -64,38 +61,6 @@ void pre_auton(void) {
   arm.setVelocity(100, percent);
   claw.setVelocity(100, percent);
 }
-
-//PID variable tuning (will take fucking forever)
-//straight
-double kP = 0.5;
-double kI = 0.2;
-double kD = 0.0;
-//turn
-double tkP = 0.5;
-double tkI = 0.2;
-double tkD = 0.0;
-
-// Autonomous settings
-int desiredValue = 200;
-int desiredTurnValue = 0;
-
-//lateral PID vals
-int error = 0;
-int prevError = 0;
-int derivative;
-int totalError = 0; //integral
-
-//turn PID vals
-int turnError = 0;
-int turnPrevError = 0;
-int turnDerivative;
-int turnTotalError = 0; //integral
-
-bool resetDriveSensors = false;
-
-// Important settings!
-bool enableDrivePID = true;
-bool noBitches = true;
 
 int drivePID(){
   while(enableDrivePID){
@@ -108,7 +73,7 @@ int drivePID(){
     int leftPos = leftMotor.position(degrees);
     int rightPos = rightMotor.position(degrees);
 
-    // lateral PID //////////////
+    // lateral PID 
     int avgPos = (leftPos + rightPos) / 2;
 
     error = avgPos - desiredValue;
@@ -116,9 +81,8 @@ int drivePID(){
     totalError += error;
 
     double lateralMotorPower = (error*kP + derivative*kD + totalError*kI);
-    /////////////////////////////
 
-    // turn PID /////////////////
+    // turn PID 
     int turnDiff = leftPos - rightPos;
 
     turnError = turnDiff - desiredTurnValue;
@@ -126,7 +90,6 @@ int drivePID(){
     turnTotalError += turnError;
 
     double turnMotorPower = (turnError*tkP + turnDerivative*tkD + turnTotalError*tkI);
-    /////////////////////////////
 
 
     leftMotor.spin(forward, lateralMotorPower + turnMotorPower, voltageUnits::volt);
@@ -144,10 +107,6 @@ int drivePID(){
 /*                                                                           */
 /*                              Autonomous Task                              */
 /*                                                                           */
-/*  This task is used to control your robot during the autonomous phase of   */
-/*  a VEX Competition.                                                       */
-/*                                                                           */
-/*  You must modify the code to add your own robot specific commands here.   */
 /*---------------------------------------------------------------------------*/
 
 void autonomous(void) {
@@ -168,19 +127,15 @@ void autonomous(void) {
 /*                                                                           */
 /*                              User Control Task                            */
 /*                                                                           */
-/*  This task is used to control your robot during the user control phase of */
-/*  a VEX Competition.                                                       */
-/*                                                                           */
-/*  You must modify the code to add your own robot specific commands here.   */
 /*---------------------------------------------------------------------------*/
 
 void usercontrol(void) {
   enableDrivePID = false;
 
-  double turnImportance = 0.5;
+  turnImportance = 0.5;
 
-  bool transmission = false;
-  bool tlatch = false;
+  transmission = false;
+  tlatch = false;
 
   while (noBitches) {
     
