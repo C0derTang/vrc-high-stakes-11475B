@@ -40,8 +40,8 @@ motor claw(13);
 controller sticks;
 
 encoder lquad = encoder(Thinky.ThreeWirePort.A);
-encoder rquad = encoder(Thinky.ThreeWirePort.B);
-encoder bquad = encoder(Thinky.ThreeWirePort.C);
+encoder rquad = encoder(Thinky.ThreeWirePort.C);
+encoder bquad = encoder(Thinky.ThreeWirePort.E);
 
 
 /*---------------------------------------------------------------------------*/
@@ -56,10 +56,12 @@ void pre_auton(void) {
   // Example: clearing encoders, setting servo positions, bathroom break etc.
   leftMotor.setStopping(coast);
   rightMotor.setStopping(coast);
-  arm.setStopping(hold);
-  arm.setMaxTorque(100, percent);
-  arm.setVelocity(100, percent);
-  claw.setVelocity(100, percent);
+  leftMotor1.setStopping(coast);
+  rightMotor1.setStopping(coast);
+  lquad.resetRotation();
+  rquad.resetRotation();
+  bquad.resetRotation();
+
 }
 
 int drivePID(){
@@ -182,13 +184,46 @@ void usercontrol(void) {
   }
 }
 
+//Attempt at position tracking -- we'll see how it goes
+
+void track(){
+
+  while (noBitches){
+    midEncode = bquad.position(degrees);
+    leftEncode = lquad.position(degrees);
+    rightEncode = rquad.position(degrees);
+
+    wait(0.005, seconds);
+
+    // 𝚫L 𝚫R and 𝚫S (center)
+    midDisplace = (apple * TwoOmni * (bquad.position(degrees) - midEncode))/360;
+    leftDisplace = (apple * FourOmni * (lquad.position(degrees) - leftEncode))/360;
+    rightDisplace = (apple * FourOmni * (rquad.position(degrees) - rightEncode))/360;
+
+    int changeDirection = (apple * (leftDisplace - rightDisplace)/14.75)/180;
+    direction += changeDirection;
+
+    Thinky.Screen.print(direction);
+
+    wait(2, seconds);
+
+    Thinky.Screen.clearScreen();
+
+   /*midEncode = bquad.position(degrees);
+    leftEncode = lquad.position(degrees);
+    rightEncode = rquad.position(degrees);*/
+
+
+  }
+}
+
 //
 // Main will set up the competition functions and callbacks.
 //
 int main() {
   // Set up callbacks for autonomous and driver control periods.
   Competition.autonomous(autonomous);
-  Competition.drivercontrol(usercontrol);
+  Competition.drivercontrol(track);
 
   // Run the pre-autonomous function.
   pre_auton();
