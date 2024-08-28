@@ -190,31 +190,45 @@ void usercontrol(void) {
 void track(){
 
   while (noBitches){
+
     midEncode = bquad.position(degrees);
     leftEncode = lquad.position(degrees);
     rightEncode = rquad.position(degrees);
 
-    wait(1, seconds);
+    leftTrackDis = (leftEncode - prevLeftEncode)/360 * (apple) * (FourOmni);
+    rightTrackDis = (rightEncode - prevRightEncode)/360 * (apple) * (FourOmni);
+    midTrackDis = (midEncode - prevMidEncode)/360 * (apple) * (TwoOmni);
 
-    Thinky.Screen.clearLine();
+    prevLeftEncode = leftEncode;
+    prevRightEncode = rightEncode;
+    prevMidEncode = midEncode;
 
-    // 𝚫L 𝚫R and 𝚫S (center)
-    midDisplace = (apple * TwoOmni * (bquad.position(degrees) - midEncode))/360;
-    leftDisplace = (apple * FourOmni * (lquad.position(degrees) - leftEncode))/360;
-    rightDisplace = (apple * FourOmni * (rquad.position(degrees) - rightEncode))/360;
+    d = (leftTrackDis - rightTrackDis)/14.75; //dist between l/r trackers
 
-    double changeDirection = (leftDisplace - rightDisplace)/(leftTrackDist * 720);
+    changeDirection = d - direction;
 
-    Thinky.Screen.print(changeDirection);
 
-    wait(0.05, seconds);
+    //local offset if moving in straight line
+    if (changeDirection = 0){
 
-  
+      posx = midTrackDis;
+      posy = rightTrackDis;
 
-   /*midEncode = bquad.position(degrees);
-    leftEncode = lquad.position(degrees);
-    rightEncode = rquad.position(degrees);*/
+    }
+    //local offset moving on an arc
+    else{
 
+      posx = (2 * sin(changeDirection/2)) * ((midTrackDis/changeDirection) + midTrackDis);
+      posy = (2 * sin(changeDirection/2)) * ((rightTrackDis/changeDirection) + rightTrackDis);
+
+    }
+
+    //avg orientation 𝞱m????
+    double avgOrient = direction + (changeDirection/2);
+
+    //now we gotta convert to polar, reverse the angle measure, then convert back to rectangular; rotating by -𝞱m
+    double polarDeg = sqrt(pow(posx, 2) +pow(posy, 2)) * sin(avgOrient);
+    polarDeg = -polarDeg;
 
   }
 }
@@ -226,7 +240,6 @@ int main() {
   // Set up callbacks for autonomous and driver control periods.
   Competition.autonomous(autonomous);
   Competition.drivercontrol(track);
-  track();
 
   // Run the pre-autonomous function.
   pre_auton();
