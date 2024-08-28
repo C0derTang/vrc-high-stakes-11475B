@@ -64,40 +64,6 @@ void pre_auton(void) {
 
 int drivePID(){
   while(enableDrivePID){
-    if (resetDriveSensors){
-      resetDriveSensors = false;
-      leftMotor.setPosition(0, degrees);
-      rightMotor.setPosition(0, degrees);
-    }
-
-    int leftPos = leftMotor.position(degrees);
-    int rightPos = rightMotor.position(degrees);
-
-    // lateral PID 
-    int avgPos = (leftPos + rightPos) / 2;
-
-    error = avgPos - desiredValue;
-    derivative = error - prevError;
-    totalError += error;
-
-    double lateralMotorPower = (error*kP + derivative*kD + totalError*kI);
-
-    // turn PID 
-    int turnDiff = leftPos - rightPos;
-
-    turnError = turnDiff - desiredTurnValue;
-    turnDerivative = turnError - turnPrevError;
-    turnTotalError += turnError;
-
-    double turnMotorPower = (turnError*tkP + turnDerivative*tkD + turnTotalError*tkI);
-
-
-    leftMotor.spin(forward, lateralMotorPower + turnMotorPower, voltageUnits::volt);
-    rightMotor.spin(forward, lateralMotorPower - turnMotorPower, voltageUnits::volt);
-
-
-    prevError = error;
-    turnPrevError = turnError;
     task::sleep(20);
   }
   return 1;
