@@ -132,6 +132,7 @@ void autonomous(void) {
 /*---------------------------------------------------------------------------*/
 
 void usercontrol(void) {
+  
   enableDrivePID = false;
 
   turnImportance = 0.5;
@@ -193,21 +194,22 @@ void track(){
     leftEncode = lquad.position(degrees);
     rightEncode = rquad.position(degrees);
 
-    wait(0.005, seconds);
+    wait(1, seconds);
+
+    Thinky.Screen.clearLine();
 
     // 𝚫L 𝚫R and 𝚫S (center)
     midDisplace = (apple * TwoOmni * (bquad.position(degrees) - midEncode))/360;
     leftDisplace = (apple * FourOmni * (lquad.position(degrees) - leftEncode))/360;
     rightDisplace = (apple * FourOmni * (rquad.position(degrees) - rightEncode))/360;
 
-    int changeDirection = (apple * (leftDisplace - rightDisplace)/14.75)/180;
-    direction += changeDirection;
+    double changeDirection = (leftDisplace - rightDisplace)/(leftTrackDist * 720);
 
-    Thinky.Screen.print(direction);
+    Thinky.Screen.print(changeDirection);
 
-    wait(2, seconds);
+    wait(0.05, seconds);
 
-    Thinky.Screen.clearScreen();
+  
 
    /*midEncode = bquad.position(degrees);
     leftEncode = lquad.position(degrees);
@@ -224,6 +226,7 @@ int main() {
   // Set up callbacks for autonomous and driver control periods.
   Competition.autonomous(autonomous);
   Competition.drivercontrol(track);
+  track();
 
   // Run the pre-autonomous function.
   pre_auton();

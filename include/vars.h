@@ -15,9 +15,9 @@ double posx = 0;
 double direction = 0;
 
 //perpendicular distance from center of rotation to tracking wheels -- will update later
-double rightTrackDist = 0;
-double leftTackDist = 0;
-double midTrackDist = 0;
+double rightTrackDist = 7.375;
+double leftTrackDist = 7.375;
+double midTrackDist = 0.375;
 
 //current encoder values
 int leftEncode;
