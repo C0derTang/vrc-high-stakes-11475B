@@ -62,8 +62,27 @@ void pre_auton(void) {
   claw.setVelocity(100, percent);
 }
 
+double inchtodegrees(double val){
+  double rotations = val/(4*PI);
+  double degrees = rotations*360;
+  return degrees;
+}
+
 int drivePID(){
   while(enableDrivePID){
+    if(reset){
+      reset = false;
+      lquad.resetRotation();
+      rquad.resetRotation();
+    }
+    double avgPos = (lquad.position(degrees)+rquad.position(degrees))/2;
+    error = inchtodegrees(driveDist - avgPos);
+
+    double latpower = error * kP;
+
+    leftMotor.spin(forward, latpower, voltageUnits::volt);
+    rightMotor.spin(forward, latpower, voltageUnits::volt);
+
     task::sleep(20);
   }
   return 1;
@@ -77,16 +96,8 @@ int drivePID(){
 
 void autonomous(void) {
   task shitstorm(drivePID);
-
-  resetDriveSensors = true;
-  desiredValue = 300;
-  desiredTurnValue = 600;
-
-  task::sleep(1000);
-
-  resetDriveSensors = true;
-  desiredValue = 300;
-  desiredTurnValue = 0;
+  reset = true;
+  driveDist=12;
 }
 
 /*---------------------------------------------------------------------------*/

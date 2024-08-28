@@ -11,8 +11,8 @@ double tkI = 0.2;
 double tkD = 0.0;
 
 // Autonomous settings
-int desiredValue = 200;
-int desiredTurnValue = 0;
+int driveDist = 0;
+int turnDist = 0;
 
 //lateral PID vals
 int error = 0;
@@ -27,7 +27,7 @@ int turnDerivative;
 int turnTotalError = 0; //integral
 
 //maintains sensor data when driver control starts
-bool resetDriveSensors = false;
+bool reset = false;
 
 // Important settings!
 bool enableDrivePID = true;
@@ -37,3 +37,6 @@ double turnImportance = 0.5;
 //transmission settings
 bool transmission = false;
 bool tlatch = false;
+
+//literally just pi
+const double PI = 3.14159265;
