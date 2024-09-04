@@ -77,10 +77,14 @@ int drivePID(){
     }
     double avgPos = (lquad.position(degrees)+rquad.position(degrees))/2;
     error = inchtodegrees(driveDist - avgPos);
+
     totalError += error;
     if(error==0 || abs(error) > 20) totalError=0;
 
-    double latpower = error*kP + totalError*kI;
+    derivative = error-prevError;
+    prevError=error;
+
+    double latpower = error*kP + totalError*kI + derivative*kD;
 
     leftMotor.spin(forward, latpower, voltageUnits::volt);
     rightMotor.spin(forward, latpower, voltageUnits::volt);
