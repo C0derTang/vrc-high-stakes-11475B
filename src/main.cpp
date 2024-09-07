@@ -50,6 +50,14 @@ encoder bquad = encoder(Thinky.ThreeWirePort.C);
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
 
+void reset(){
+  lquad.resetRotation();
+  rquad.resetRotation();
+}
+
+
+
+
 void pre_auton(void) {
 
   // All activities that occur before the competition starts
@@ -67,14 +75,26 @@ double inchtodegrees(double val){
   double degrees = rotations*360;
   return degrees;
 }
+double degreestorad(double val){
+  return val*PI/180;
+}
+double radtodegrees(double val){
+  return val*180/PI;
+}
+
+int odometry(){
+  //very rudimentary, just degree tracking right now
+  while(true){
+    curDeg += ((lquad.position(degrees)-prevL) - (rquad.position(degrees)-prevR)) / (lWheelDist + rWheelDist);
+    prevL = lquad.position(degrees);
+    prevR = rquad.position(degrees);
+    task::sleep(20);
+  }
+  return 1;
+}
 
 int drivePID(){
   while(enableDrivePID){
-    if(reset){
-      reset = false;
-      lquad.resetRotation();
-      rquad.resetRotation();
-    }
     double avgPos = (lquad.position(degrees)+rquad.position(degrees))/2;
     error = inchtodegrees(driveDist - avgPos);
 
@@ -94,6 +114,26 @@ int drivePID(){
   return 1;
 }
 
+int turnPID(){
+  while(enableTurnPID){
+    error = targetDeg-curDeg;
+
+    totalError += error;
+    if(error==0 || abs(error) > 20) totalError=0;
+
+    derivative = error-prevError;
+    prevError=error;
+
+    double latpower = error*kP + totalError*kI + derivative*kD;
+
+    leftMotor.spin(forward, latpower, voltageUnits::volt);
+    rightMotor.spin(reverse, latpower, voltageUnits::volt);
+
+    task::sleep(20);
+  }
+  return 1;
+}
+
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*                              Autonomous Task                              */
@@ -101,9 +141,12 @@ int drivePID(){
 /*---------------------------------------------------------------------------*/
 
 void autonomous(void) {
-  task shitstorm(drivePID);
-  reset = true;
+  task odom(odometry);
+  task dpid(drivePID);
+  task tpid(turnPID);
+  reset();
   driveDist=12;
+  targetDeg=90;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -124,7 +167,7 @@ void usercontrol(void) {
     
     double turnVal = sticks.Axis1.position(percent);
     double fwdVal = sticks.Axis3.position(percent);
-    // volts gives more power, no built in weird PID apparently
+    // volts gives more power, apparently
     double turnVolts = turnVal * 0.12;
     double fwdVolts = fwdVal * 0.12 * (1-(abs(turnVolts/12.0)) * turnImportance);
     if (transmission){

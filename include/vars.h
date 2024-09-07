@@ -11,26 +11,28 @@ double tkI = 0.2;
 double tkD = 0.0;
 
 // Autonomous settings
-int driveDist = 0;
-int turnDist = 0;
+double driveDist = 0;
+
+double prevL = 0;
+double prevR = 0;
+double curDeg = 0;
+double targetDeg = 0;
 
 //lateral PID vals
-int error = 0;
-int prevError = 0;
-int derivative;
-int totalError = 0; //integral
+double error = 0;
+double prevError = 0;
+double derivative;
+double totalError = 0; //integral
 
 //turn PID vals
-int turnError = 0;
-int turnPrevError = 0;
-int turnDerivative;
-int turnTotalError = 0; //integral
-
-//maintains sensor data when driver control starts
-bool reset = false;
+double turnError = 0;
+double turnPrevError = 0;
+double turnDerivative;
+double turnTotalError = 0; //integral
 
 // Important settings!
 bool enableDrivePID = true;
+bool enableTurnPID = true;
 bool noBitches = true; //conditional for driver control loop -- the code doesn't lie
 double turnImportance = 0.5;
 
@@ -38,5 +40,7 @@ double turnImportance = 0.5;
 bool transmission = false;
 bool tlatch = false;
 
-//literally just pi
+//constants
 const double PI = 3.14159265;
+const double lWheelDist = 7.375;
+const double rWheelDist = 7.375;
