@@ -113,18 +113,18 @@ int drivePID(){
 
 int turnPID(){
   while(enableTurnPID){
-    error = targetDeg-curDeg;
+    turnError = targetDeg-curDeg;
 
-    totalError += error;
-    if(error==0 || abs(error) > 20) totalError=0;
+    turnTotalError += turnError;
+    if(turnError==0 || abs(turnError) > 20) turnTotalError=0;
 
-    derivative = error-prevError;
-    prevError=error;
+    turnDerivative = turnError-turnPrevError;
+    turnPrevError=turnError;
 
-    double latpower = error*kP + totalError*kI + derivative*kD;
+    double turnpower = turnError*kP + turnTotalError*kI + turnDerivative*kD;
 
-    leftMotor.spin(forward, latpower, voltageUnits::volt);
-    rightMotor.spin(reverse, latpower, voltageUnits::volt);
+    leftMotor.spin(forward, turnDerivative, voltageUnits::volt);
+    rightMotor.spin(reverse, turnpower, voltageUnits::volt);
 
     task::sleep(20);
   }
