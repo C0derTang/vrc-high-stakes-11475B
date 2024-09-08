@@ -55,9 +55,6 @@ void reset(){
   rquad.resetRotation();
 }
 
-
-
-
 void pre_auton(void) {
 
   // All activities that occur before the competition starts
