@@ -96,7 +96,7 @@ int odometry(){
 int drivePID(){
   while(enableDrivePID){
     double avgPos = (lquad.position(degrees)+rquad.position(degrees))/2;
-    error = inchtodegrees(driveDist - avgPos);
+    error = driveDist - inchtodegrees(avgPos);
 
     totalError += error;
     if(error==0 || abs(error) > 20) totalError=0;
@@ -203,8 +203,7 @@ void usercontrol(void) {
       tlatch = false;
     }
 
-    wait(20, msec); // Sleep the task for a short amount of time to
-                    // prevent wasted resources.
+    wait(20, msec); 
   }
 }
 
