@@ -10,8 +10,6 @@ double tkP = 0.5;
 double tkI = 0.2;
 double tkD = 0.0;
 
-
-
 // Autonomous settings
 double driveDist = 0;
 double desiredValue;

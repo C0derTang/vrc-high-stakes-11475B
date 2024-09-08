@@ -10,6 +10,7 @@
 #include "vex.h"
 #include <cmath>
 #include "vars.h"
+#include "config.h"
 
 // fuck best practices, im doing this:
 using namespace vex;
@@ -18,35 +19,29 @@ using namespace std;
 // A global instance of competition
 competition Competition;
 
-// define your global instances of motors and other devices here
-brain Thinky;
-
-motor lm1(0, false);
-motor lm2(1, false);
-motor lm3(2, false);
-motor rm1(7, true);
-motor rm2(8, true);
-motor rm3(9, true);
-
-
-motor_group leftMotor1(lm1,lm2);
-motor_group rightMotor1(rm1,rm2);
-
-motor_group leftMotor(lm1, lm2, lm3);
-motor_group rightMotor(rm1, rm2, rm3);
-motor arm(12);
-motor claw(13);
-
-controller sticks;
-
-encoder lquad = encoder(Thinky.ThreeWirePort.A);
-encoder rquad = encoder(Thinky.ThreeWirePort.C);
-encoder bquad = encoder(Thinky.ThreeWirePort.E);
-
-
 /*---------------------------------------------------------------------------*/
+/*                             BRAIN CONFIGURATION                           */
 /*                                                                           */
-/*                          Pre-Autonomous Functions                         */
+/*      Port                          Name                        Type       */
+/*                                                                           */
+/*      1                             lm1                         motor      */
+/*      2                             lm2                         motor      */
+/*      3                             lm3                         motor      */
+/*      8                             rm1                         motor      */
+/*      9                             rm2                         motor      */
+/*      10                            rm3                         motor      */
+/*      4                             intake                      motor      */
+/*      5                             claw                        motor      */
+/*      19                            distance                    distance   */
+/*      18                            inertial                    inertial   */
+/*      17                            vision                      vision     */
+/*      20                            radio                       radio      */
+/*                                                                           */
+/*      AB                            lquad                       encoder    */
+/*      CD                            rquad                       encoder    */
+/*      EF                            bquad                       encoder    */
+/*      G                             clamp                       solenoid   */
+/*      H                             intakeCyl                   solenoid   */
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
 
@@ -155,22 +150,6 @@ void usercontrol(void) {
       rightMotor.spin(forward, fwdVolts - turnVolts, voltageUnits::volt);
     }
 
-    if (sticks.ButtonR1.pressing()){
-      arm.spin(forward);
-    }else if(sticks.ButtonR2.pressing()){
-      arm.spin(reverse);
-    }else{
-      arm.stop();
-    }
-
-    if (sticks.ButtonL1.pressing()){
-      claw.spin(forward);
-    }else if(sticks.ButtonL2.pressing()){
-      claw.spin(reverse);
-    }else{
-      claw.stop();
-    }
-
     if (sticks.ButtonA.pressing()){
       if (!tlatch){
         transmission = !transmission;
@@ -185,70 +164,13 @@ void usercontrol(void) {
   }
 }
 
-//Attempt at position tracking -- we'll see how it goes
-
-int angleChange(){
-
-  //very rudimentary, just degree tracking right now
-  while(true){
-    curDeg += ((lquad.position(degrees)-prevL) - (rquad.position(degrees)-prevR)) / (lWheelDist + rWheelDist);
-    prevL = lquad.position(degrees);
-    prevR = rquad.position(degrees);
-    task::sleep(20);
-  }
-  return 1;
-
-}
-
-void track(){
-
-  while (noBitches){
-
-    /*midEncode = bquad.position(degrees);
-    leftEncode = lquad.position(degrees);
-    rightEncode = rquad.position(degrees);*/
-
-    double leftTrackDis = (lquad.position(degrees) - prevL)/360 * PI * (FourOmni);
-    double rightTrackDis = (rquad.position(degrees) - prevR)/360 * PI * (FourOmni);
-    double midTrackDis = (bquad.position(degrees) - prevM)/360 * PI * (TwoOmni);
-
-    /*d = (leftTrackDis - rightTrackDis)/14.75; //dist between l/r trackers
-
-    changeDirection = d - direction;*/
-
-
-    //local offset if moving in straight line
-    if (curDeg = 0){
-
-      posx = midTrackDis;
-      posy = rightTrackDis;
-
-    }
-    //local offset moving on an arc
-    else{
-
-      posx = (2 * sin(curDeg/2)) * ((midTrackDis/curDeg) + midTrackDis);
-      posy = (2 * sin(curDeg/2)) * ((rightTrackDis/curDeg) + rightTrackDis);
-
-    }
-
-    //avg orientation 𝞱m????
-    double avgOrient = heading + (curDeg/2);
-
-    //now we gotta convert to polar, reverse the angle measure, then convert back to rectangular; rotating by -𝞱m
-    double polarDeg = sqrt(pow(posx, 2) +pow(posy, 2)) * sin(avgOrient);
-    polarDeg = -polarDeg;
-
-  }
-}
-
 //
 // Main will set up the competition functions and callbacks.
 //
 int main() {
   // Set up callbacks for autonomous and driver control periods.
   Competition.autonomous(autonomous);
-  Competition.drivercontrol(track);
+  Competition.drivercontrol(usercontrol);
 
   // Run the pre-autonomous function.
   pre_auton();
