@@ -27,6 +27,11 @@ extern motor intake;
 //claw
 extern motor claw;
 
+//sensors
+vision sony;
+distance ruler;
+inertial inert;
+
 //shaft encoders
 extern encoder lquad;
 extern encoder rquad;

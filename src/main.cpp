@@ -32,9 +32,9 @@ competition Competition;
 /*      10                            rm3                         motor      */
 /*      4                             intake                      motor      */
 /*      5                             claw                        motor      */
-/*      19                            distance                    distance   */
-/*      18                            inertial                    inertial   */
-/*      17                            vision                      vision     */
+/*      19                            ruler                       distance   */
+/*      18                            inert                       inertial   */
+/*      17                            sony                        vision     */
 /*      20                            radio                       radio      */
 /*                                                                           */
 /*      AB                            lquad                       encoder    */
@@ -53,9 +53,16 @@ void pre_auton(void) {
   rightMotor.setStopping(coast);
   leftMotor1.setStopping(coast);
   rightMotor1.setStopping(coast);
+  claw.setStopping(hold);
+  intake.setStopping(coast);
+  clamp.set(clampOn);
+  intakeCyl.set(intakeOn);
+
   lquad.resetRotation();
   rquad.resetRotation();
   bquad.resetRotation();
+
+
 
 }
 

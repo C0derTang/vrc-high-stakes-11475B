@@ -28,6 +28,11 @@ motor intake(3, false);
 //claw
 motor claw(4, false);
 
+//sensors
+vision sony = vision(16);
+distance ruler = distance(18);
+inertial inert = inertial(17);
+
 //shaft encoders
 encoder lquad = encoder(Thinky.ThreeWirePort.A);
 encoder rquad = encoder(Thinky.ThreeWirePort.C);

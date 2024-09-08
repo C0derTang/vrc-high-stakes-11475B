@@ -14,7 +14,7 @@ double tkD = 0.0;
 double driveDist = 0;
 double desiredValue;
 
-double posx;
+double posx; // pos = position
 double posy;
 double heading;
 
@@ -57,3 +57,10 @@ const double rWheelDist = 7.375;
 const double mWheelDist = 0.375;
 const double TwoOmni = 2.75;
 const double FourOmni = 4;
+
+//pneumatic t/f
+bool clampOn = false;
+bool intakeOn = false;
+
+//ui settings -- fun for victor
+bool visual = false;
