@@ -96,7 +96,7 @@ int odometry(){
 int drivePID(){
   while(enableDrivePID){
     double avgPos = (lquad.position(degrees)+rquad.position(degrees))/2;
-    error = driveDist - inchtodegrees(avgPos);
+    error = inchtodegrees(driveDist) - avgPos;
 
     totalError += error;
     if(error==0 || abs(error) > 20) totalError=0;
