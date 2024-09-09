@@ -1,4 +1,5 @@
 //hi
+#include <string>
 
 //PID variable tuning (will take fucking forever)
 //straight tuning
@@ -64,3 +65,4 @@ bool intakeOn = false;
 
 //ui settings -- fun for victor
 bool visual = false;
+string programName = "urmom";
