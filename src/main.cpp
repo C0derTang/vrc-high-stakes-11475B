@@ -53,6 +53,7 @@ encoder bquad = encoder(Thinky.ThreeWirePort.C);
 void reset(){
   lquad.resetRotation();
   rquad.resetRotation();
+  curDeg=0;
 }
 
 void pre_auton(void) {
@@ -93,7 +94,7 @@ int odometry(){
 int drivePID(){
   while(enableDrivePID){
     double avgPos = (lquad.position(degrees)+rquad.position(degrees))/2;
-    error = inchtodegrees(driveDist) - avgPos;
+    error = avgPos-inchtodegrees(driveDist);
 
     totalError += error;
     if(error==0 || abs(error) > 20) totalError=0;
