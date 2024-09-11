@@ -2,7 +2,7 @@
 
 //PID variable tuning (will take fucking forever)
 //straight tuning
-double kP = 0.02;
+double kP = 0.05;
 double kI = 0.0;
 double kD = 0.0;
 //turn
