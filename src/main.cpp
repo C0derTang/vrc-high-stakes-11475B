@@ -91,6 +91,34 @@ int odometry(){
   return 1;
 }
 
+int headingPID() {
+  while(enableDrivePID) {
+    // Heading correction logic
+    double headingError = targetDeg - curDeg;
+
+    // Basic PID for heading correction
+    turnTotalError += headingError;
+    if (headingError == 0 || abs(headingError) > 20) turnTotalError = 0;
+
+    double turnDerivative = headingError - turnPrevError;
+    turnPrevError = headingError;
+
+    // Adjust heading with PID terms
+    double turnPower = headingError * tkP + turnTotalError * tkI + turnDerivative * tkD;
+
+    // Clamp the turn power
+    if (turnPower < -12.0) turnPower = -12.0;
+    if (turnPower > 12.0) turnPower = 12.0;
+
+    // Use turn power to correct heading while driving
+    leftMotor.spin(forward, latpower + turnPower, voltageUnits::volt);
+    rightMotor.spin(forward, latpower - turnPower, voltageUnits::volt);
+
+    task::sleep(20);
+  }
+  return 1;
+}
+
 int drivePID(){
   while(enableDrivePID){
     double avgPos = (lquad.position(degrees)+rquad.position(degrees))/2;
@@ -102,19 +130,18 @@ int drivePID(){
     derivative = error-prevError;
     prevError=error;
 
-    double latpower = error*kP + totalError*kI + derivative*kD;
+    // Calculate drive power (forward movement)
+    latpower = error * kP + totalError * kI + derivative * kD;
 
     if (latpower < -12.0) latpower = -12.0;
     if (latpower > 12.0) latpower = 12.0;
 
-    leftMotor.spin(forward, latpower, voltageUnits::volt);
-    rightMotor.spin(forward, latpower, voltageUnits::volt);
-
+    // Let headingPID function handle heading correction
     task::sleep(20);
   }
   return 1;
-  
 }
+
 
 int turnPID(){
   while(enableTurnPID){
@@ -145,6 +172,7 @@ int turnPID(){
 void autonomous(void) {
   //task odom(odometry);
   task dpid(drivePID);
+  task hpid(headingPID);
   //task tpid(turnPID);
   reset();
   driveDist=12;

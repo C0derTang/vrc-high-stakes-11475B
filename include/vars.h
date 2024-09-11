@@ -11,6 +11,7 @@ double tkI = 0;
 double tkD = 0.01;
 
 // Autonomous settings
+double latpower = 0;
 double driveDist = 0;
 
 double prevL = 0;
