@@ -69,7 +69,7 @@ void pre_auton(void) {
 }
 
 double inchtodegrees(double val){
-  double rotations = val/(4*PI);
+  double rotations = val/(4.125*PI);
   double degrees = rotations*360;
   return degrees;
 }
