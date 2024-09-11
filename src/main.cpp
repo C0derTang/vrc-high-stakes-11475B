@@ -143,7 +143,6 @@ void autonomous(void) {
   task tpid(turnPID);
   reset();
   driveDist=12;
-  targetDeg=90;
 }
 
 /*---------------------------------------------------------------------------*/
