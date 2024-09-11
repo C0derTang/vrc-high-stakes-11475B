@@ -2,13 +2,13 @@
 
 //PID variable tuning (will take fucking forever)
 //straight tuning
-double kP = .2;
+double kP = 0.2;
 double kI = 0.0;
-double kD = 0.0;
+double kD = 0.01;
 //turn
 double tkP = 0.5;
 double tkI = 0.2;
-double tkD = 0.0;
+double tkD = 0.01;
 
 // Autonomous settings
 double driveDist = 0;
