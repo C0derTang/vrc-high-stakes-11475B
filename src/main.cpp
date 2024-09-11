@@ -173,7 +173,7 @@ void autonomous(void) {
   reset();
   driveDist=12;
   targetDeg=0;
-  //task odom(odometry);
+  task odom(odometry);
   task dpid(drivePID);
   task hpid(headingPID);
   //task tpid(turnPID);
