@@ -123,7 +123,7 @@ int turnPID(){
 
     double turnpower = turnError*kP + turnTotalError*kI + turnDerivative*kD;
 
-    leftMotor.spin(forward, turnDerivative, voltageUnits::volt);
+    leftMotor.spin(forward, turnpower, voltageUnits::volt);
     rightMotor.spin(reverse, turnpower, voltageUnits::volt);
 
     task::sleep(20);
@@ -153,6 +153,7 @@ void autonomous(void) {
 
 void usercontrol(void) {
   enableDrivePID = false;
+  enableTurnPID=false;
 
   turnImportance = 0.5;
 
