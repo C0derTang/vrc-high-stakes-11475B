@@ -104,7 +104,8 @@ int drivePID(){
 
     double latpower = error*kP + totalError*kI + derivative*kD;
 
-    latpower = clamp(latpower, -12.0, 12.0);
+    if (latpower < -12.0) latpower = -12.0;
+    if (latpower > 12.0) latpower = 12.0;
 
     leftMotor.spin(forward, latpower, voltageUnits::volt);
     rightMotor.spin(forward, latpower, voltageUnits::volt);
