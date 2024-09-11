@@ -143,9 +143,9 @@ int turnPID(){
 /*---------------------------------------------------------------------------*/
 
 void autonomous(void) {
-  task odom(odometry);
+  //task odom(odometry);
   task dpid(drivePID);
-  task tpid(turnPID);
+  //task tpid(turnPID);
   reset();
   driveDist=12;
 }
