@@ -3,8 +3,8 @@
 //PID variable tuning (will take fucking forever)
 //straight tuning
 double kP = 0.2;
-double kI = 0.0;
-double kD = 0.01;
+double kI = 0.001;
+double kD = 0.1;
 //turn
 double tkP = 0.5;
 double tkI = 0.2;
@@ -21,13 +21,13 @@ double targetDeg = 0;
 //lateral PID vals
 double error = 0;
 double prevError = 0;
-double derivative;
+double derivative=0;
 double totalError = 0; //integral
 
 //turn PID vals
 double turnError = 0;
 double turnPrevError = 0;
-double turnDerivative;
+double turnDerivative=0;
 double turnTotalError = 0; //integral
 
 // Important settings!

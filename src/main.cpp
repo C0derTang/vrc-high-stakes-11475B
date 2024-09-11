@@ -40,8 +40,8 @@ motor claw(13);
 controller sticks;
 
 encoder lquad = encoder(Thinky.ThreeWirePort.A);
-encoder rquad = encoder(Thinky.ThreeWirePort.B);
-encoder bquad = encoder(Thinky.ThreeWirePort.C);
+encoder rquad = encoder(Thinky.ThreeWirePort.C);
+//encoder bquad = encoder(Thinky.ThreeWirePort.C);
 
 
 /*---------------------------------------------------------------------------*/
