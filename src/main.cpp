@@ -9,6 +9,7 @@
 
 #include "vex.h"
 #include <cmath>
+//#include <string>
 #include "vars.h"
 
 // fuck best practices, im doing this:
@@ -40,7 +41,7 @@ motor claw(13);
 controller sticks;
 
 encoder lquad = encoder(Thinky.ThreeWirePort.C);
-encoder rquad = encoder(Thinky.ThreeWirePort.A);
+encoder rquad = encoder(Thinky.ThreeWirePort.E);
 //encoder bquad = encoder(Thinky.ThreeWirePort.C);
 
 
@@ -60,8 +61,8 @@ void pre_auton(void) {
 
   // All activities that occur before the competition starts
   // Example: clearing encoders, setting servo positions, bathroom break etc.
-  leftMotor.setStopping(coast);
-  rightMotor.setStopping(coast);
+  leftMotor.setStopping(hold);
+  rightMotor.setStopping(hold);
   arm.setStopping(hold);
   arm.setMaxTorque(100, percent);
   arm.setVelocity(100, percent);
@@ -86,16 +87,25 @@ int odometry(){
     curDeg += ((lquad.position(degrees)-prevL) - (rquad.position(degrees)-prevR)) / (lWheelDist + rWheelDist);
     prevL = lquad.position(degrees);
     prevR = rquad.position(degrees);
+
+    sticks.Screen.clearScreen();
+    
+    sticks.Screen.print(curDeg);
+    sticks.Screen.setCursor(0,0);
+    
     task::sleep(20);
   }
   return 1;
 }
 
 int headingPID() {
-  while(enableDrivePID) {
+  while(enableTurnPID) {
     // Heading correction logic
     double headingError = targetDeg - curDeg;
-
+    sticks.Screen.clearScreen();
+    
+    sticks.Screen.print(headingError);
+    
     // Basic PID for heading correction
     turnTotalError += headingError;
     if (headingError == 0 || abs(headingError) > 20) turnTotalError = 0;
@@ -109,10 +119,12 @@ int headingPID() {
     // Clamp the turn power
     if (turnPower < -12.0) turnPower = -12.0;
     if (turnPower > 12.0) turnPower = 12.0;
+    sticks.Screen.print(turnPower);
+    sticks.Screen.setCursor(0,0);
 
     // Use turn power to correct heading while driving
-    leftMotor.spin(forward, latpower + turnPower, voltageUnits::volt);
-    rightMotor.spin(forward, latpower - turnPower, voltageUnits::volt);
+    leftMotor.spin(forward, latpower - turnPower, voltageUnits::volt);
+    rightMotor.spin(forward, latpower + turnPower, voltageUnits::volt);
 
     task::sleep(20);
   }
@@ -122,7 +134,7 @@ int headingPID() {
 int drivePID(){
   while(enableDrivePID){
     double avgPos = (lquad.position(degrees)+rquad.position(degrees))/2;
-    error = avgPos-inchtodegrees(driveDist);
+    error = inchtodegrees(driveDist)-avgPos;
 
     totalError += error;
     if(error==0 || abs(error) > 20) totalError=0;
@@ -142,27 +154,6 @@ int drivePID(){
   return 1;
 }
 
-
-int turnPID(){
-  while(enableTurnPID){
-    turnError = targetDeg-curDeg;
-
-    turnTotalError += turnError;
-    if(turnError==0 || abs(turnError) > 20) turnTotalError=0;
-
-    turnDerivative = turnError-turnPrevError;
-    turnPrevError=turnError;
-
-    double turnpower = turnError*kP + turnTotalError*kI + turnDerivative*kD;
-
-    leftMotor.spin(forward, turnpower, voltageUnits::volt);
-    rightMotor.spin(reverse, turnpower, voltageUnits::volt);
-
-    task::sleep(20);
-  }
-  return 1;
-}
-
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
 /*                              Autonomous Task                              */
@@ -171,8 +162,9 @@ int turnPID(){
 
 void autonomous(void) {
   reset();
-  driveDist=12;
-  targetDeg=0;
+  //driveDist=12;
+  enableDrivePID=false;
+  targetDeg=45;
   task odom(odometry);
   task dpid(drivePID);
   task hpid(headingPID);
@@ -187,6 +179,8 @@ void autonomous(void) {
 /*---------------------------------------------------------------------------*/
 
 void usercontrol(void) {
+  reset();
+  task odom(odometry);
   enableDrivePID = false;
   enableTurnPID=false;
 

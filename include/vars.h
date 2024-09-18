@@ -6,8 +6,8 @@ double kP = 0.05;
 double kI = 0.00001;
 double kD = 0.02;
 //turn
-double tkP = 0.05;
-double tkI = 0.0001;
+double tkP = .2;
+double tkI = 0;
 double tkD = 0.01;
 
 // Autonomous settings
