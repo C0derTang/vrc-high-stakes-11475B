@@ -38,7 +38,8 @@ motor_group rightMotor1(rm1,rm2);
 motor_group leftMotor(lm1, lm2, lm3);
 motor_group rightMotor(rm1, rm2, rm3);
 motor arm(12);
-motor claw(13);
+motor intake(3,ratio36_1);
+digital_out clamp = digital_out(Thinky.ThreeWirePort.G);
 
 controller sticks;
 
@@ -69,7 +70,7 @@ void pre_auton(void) {
   arm.setStopping(hold);
   arm.setMaxTorque(100, percent);
   arm.setVelocity(100, percent);
-  claw.setVelocity(100, percent);
+  intake.setVelocity(100, percent);
 }
 
 double inchtodegrees(double val){
@@ -123,8 +124,8 @@ int headingPID() {
     if (turnPower > 12.0) turnPower = 12.0;
 
     // Use turn power to correct heading while driving
-    leftMotor.spin(forward, latpower - turnPower, voltageUnits::volt);
-    rightMotor.spin(forward, latpower + turnPower, voltageUnits::volt);
+    leftMotor.spin(forward, lpower - turnPower, voltageUnits::volt);
+    rightMotor.spin(forward, rpower + turnPower, voltageUnits::volt);
 
     task::sleep(20);
   }
@@ -132,22 +133,40 @@ int headingPID() {
 }
 
 int drivePID(){
-  while(enableDrivePID){
-    double avgPos = (lquad.position(degrees)+rquad.position(degrees))/2;
+  while(true){
+    if (!enableDrivePID) continue;
+    double lPos = lquad.position(degrees);
     
-    error = avgPos-inchtodegrees(driveDist);
+    lerror = lPos-inchtodegrees(driveDist);
 
-    totalError += error;
-    if(abs(error)<.01 || abs(error) > 20) totalError=0;
+    ltotalError += lerror;
+    if(abs(lerror)<.01 || abs(lerror) > 20) ltotalError=0;
 
-    derivative = error-prevError;
-    prevError=error;
+    lderivative = lerror-lprevError;
+    lprevError=lerror;
 
     // Calculate drive power (forward movement)
-    latpower = error * kP + totalError * kI + derivative * kD;
+    lpower = lerror * kP + ltotalError * kI + lderivative * kD;
 
-    if (latpower < -12.0) latpower = -12.0;
-    if (latpower > 12.0) latpower = 12.0;
+    if (lpower < -12.0) lpower = -12.0;
+    if (lpower > 12.0) lpower = 12.0;
+
+    double rPos = rquad.position(degrees);
+    
+    rerror = rPos-inchtodegrees(driveDist);
+
+    rtotalError += rerror;
+    if(abs(rerror)<.01 || abs(rerror) > 20) rtotalError=0;
+
+    rderivative = rerror-rprevError;
+    rprevError=rerror;
+
+    // Calculate drive power (forward movement)
+    rpower = rerror * kP + rtotalError * kI + rderivative * kD;
+
+    if (rpower < -12.0) rpower = -12.0;
+    if (rpower > 12.0) rpower = 12.0;
+
 
     // Let headingPID function handle heading correction
     task::sleep(20);
@@ -166,15 +185,17 @@ void autonomous(void) {
   task odom(odometry);
   task dpid(drivePID);
   task hpid(headingPID);
+  targetDeg=45;
+  /*
   for(int i=0; i<4; ++i){
-  driveDist=96;
-  wait(6, seconds);
+  driveDist+=96;
+  wait(4, seconds);
   enableDrivePID=false;
-  targetDeg-=45;
+  targetDeg=45;
   wait(2, seconds);
-  driveDist=0;
   enableDrivePID=true;
   }
+  */
   //task tpid(turnPID);
   
 }
@@ -211,25 +232,19 @@ void usercontrol(void) {
       rightMotor.spin(forward, fwdVolts - turnVolts, voltageUnits::volt);
     }
 
-    if (sticks.ButtonR1.pressing()){
-      arm.spin(forward);
-    }else if(sticks.ButtonR2.pressing()){
-      arm.spin(reverse);
-    }else{
-      arm.stop();
-    }
+    clamp.set(clamped);
 
     if (sticks.ButtonL1.pressing()){
-      claw.spin(forward);
+      intake.spin(forward);
     }else if(sticks.ButtonL2.pressing()){
-      claw.spin(reverse);
+      intake.spin(reverse);
     }else{
-      claw.stop();
+      intake.stop();
     }
 
     if (sticks.ButtonA.pressing()){
       if (!tlatch){
-        transmission = !transmission;
+        clamped = !clamped;
         tlatch = true;
       }
     }else{

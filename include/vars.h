@@ -11,7 +11,8 @@ double tkI = 0.00000005;
 double tkD = 0.01;
 
 // Autonomous settings
-double latpower = 0;
+double lpower = 0;
+double rpower = 0;
 double driveDist = 0;
 
 double prevL = 0;
@@ -19,11 +20,15 @@ double prevR = 0;
 double curDeg = 0;
 double targetDeg = 0;
 
-//lateral PID vals
-double error = 0;
-double prevError = 0;
-double derivative=0;
-double totalError = 0; //integral
+//lateral PID vals for left and right
+double lerror = 0;
+double lprevError = 0;
+double lderivative=0;
+double ltotalError = 0; //integral
+double rerror = 0;
+double rprevError = 0;
+double rderivative=0;
+double rtotalError = 0; //integral
 
 //turn PID vals
 double turnError = 0;
@@ -40,6 +45,8 @@ double turnImportance = 0.5;
 //transmission settings
 bool transmission = false;
 bool tlatch = false;
+
+bool clamped = false;
 
 //constants
 const double PI = 3.14159265;
