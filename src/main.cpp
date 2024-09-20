@@ -29,6 +29,8 @@ motor rm1(7, true);
 motor rm2(8, true);
 motor rm3(9, true);
 
+inertial whee(15);
+
 
 motor_group leftMotor1(lm1,lm2);
 motor_group rightMotor1(rm1,rm2);
@@ -54,6 +56,7 @@ encoder rquad = encoder(Thinky.ThreeWirePort.E);
 void reset(){
   lquad.resetRotation();
   rquad.resetRotation();
+  whee.setHeading(0, degrees);
   curDeg=0;
 }
 
@@ -61,8 +64,8 @@ void pre_auton(void) {
 
   // All activities that occur before the competition starts
   // Example: clearing encoders, setting servo positions, bathroom break etc.
-  leftMotor.setStopping(hold);
-  rightMotor.setStopping(hold);
+  leftMotor.setStopping(coast);
+  rightMotor.setStopping(coast);
   arm.setStopping(hold);
   arm.setMaxTorque(100, percent);
   arm.setVelocity(100, percent);
@@ -90,6 +93,8 @@ int odometry(){
 
     sticks.Screen.clearScreen();
     
+    sticks.Screen.print(whee.heading(degrees));
+    sticks.Screen.print("\n");
     sticks.Screen.print(curDeg);
     sticks.Screen.setCursor(0,0);
     
@@ -101,14 +106,11 @@ int odometry(){
 int headingPID() {
   while(enableTurnPID) {
     // Heading correction logic
-    double headingError = targetDeg - curDeg;
-    sticks.Screen.clearScreen();
-    
-    sticks.Screen.print(headingError);
-    
+    double headingError = targetDeg - (-whee.rotation(degrees)/2);
+        
     // Basic PID for heading correction
     turnTotalError += headingError;
-    if (headingError == 0 || abs(headingError) > 20) turnTotalError = 0;
+    if (abs(headingError) <.01 || abs(headingError) > 20) turnTotalError = 0;
 
     double turnDerivative = headingError - turnPrevError;
     turnPrevError = headingError;
@@ -119,8 +121,6 @@ int headingPID() {
     // Clamp the turn power
     if (turnPower < -12.0) turnPower = -12.0;
     if (turnPower > 12.0) turnPower = 12.0;
-    sticks.Screen.print(turnPower);
-    sticks.Screen.setCursor(0,0);
 
     // Use turn power to correct heading while driving
     leftMotor.spin(forward, latpower - turnPower, voltageUnits::volt);
@@ -134,10 +134,11 @@ int headingPID() {
 int drivePID(){
   while(enableDrivePID){
     double avgPos = (lquad.position(degrees)+rquad.position(degrees))/2;
-    error = inchtodegrees(driveDist)-avgPos;
+    
+    error = avgPos-inchtodegrees(driveDist);
 
     totalError += error;
-    if(error==0 || abs(error) > 20) totalError=0;
+    if(abs(error)<.01 || abs(error) > 20) totalError=0;
 
     derivative = error-prevError;
     prevError=error;
@@ -162,12 +163,18 @@ int drivePID(){
 
 void autonomous(void) {
   reset();
-  //driveDist=12;
-  enableDrivePID=false;
-  targetDeg=45;
   task odom(odometry);
   task dpid(drivePID);
   task hpid(headingPID);
+  for(int i=0; i<4; ++i){
+  driveDist=96;
+  wait(6, seconds);
+  enableDrivePID=false;
+  targetDeg-=45;
+  wait(2, seconds);
+  driveDist=0;
+  enableDrivePID=true;
+  }
   //task tpid(turnPID);
   
 }
