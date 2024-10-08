@@ -32,6 +32,7 @@ motor rm3(9, true);
 motor arm(12, true);
 digital_out armp1(Thinky.ThreeWirePort.A);
 digital_out armp2(Thinky.ThreeWirePort.B);
+digital_out armp3(Thinky.ThreeWirePort.D);
 
 inertial whee(15);
 
@@ -62,21 +63,7 @@ encoder rquad = encoder(Thinky.ThreeWirePort.E);
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
 
-struct Toggle{
-    bool state = false;
-    bool latch = false;
 
-    void check(bool cond){
-      if (cond){
-        if (!latch){
-          state  = !state;
-          latch = true;
-        }
-        }else{
-        latch = false;
-        }
-    }
-};
 
 
 void reset(){
@@ -96,6 +83,8 @@ void pre_auton(void) {
   arm.setMaxTorque(100, percent);
   arm.setVelocity(100, percent);
   intake.setVelocity(100, percent);
+
+  
 }
 
 double inchtodegrees(double val){
@@ -240,11 +229,6 @@ void usercontrol(void) {
 
   turnImportance = 0.5;
 
-  Toggle tlatch;
-  Toggle clatch;
-  Toggle a1latch;
-  Toggle a2latch;
-
   while (noBitches) {
     
     double turnVal = sticks.Axis1.position(percent);
@@ -265,6 +249,7 @@ void usercontrol(void) {
     if (a1latch.state) arm.spinToPosition(4.5, turns,false);
     else arm.spinToPosition(0, turns, false);
     armp2.set(a2latch.state);
+    armp3.set(!a2latch.state);
 
     if (sticks.ButtonL1.pressing()){
       intake.spin(forward);
@@ -276,8 +261,10 @@ void usercontrol(void) {
 
     tlatch.check(sticks.ButtonA.pressing()); // transmission
     clatch.check(sticks.ButtonR1.pressing()); // clamp
-    a1latch.check(sticks.ButtonX.pressing()); // transmission
-    a2latch.check(sticks.ButtonY.pressing()); // clamp
+    a1latch.check(sticks.ButtonX.pressing());
+    a2latch.check(sticks.ButtonY.pressing());
+
+    
 
     wait(20, msec); 
   }

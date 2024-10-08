@@ -50,3 +50,24 @@ bool clamped = false;
 const double PI = 3.14159265;
 const double lWheelDist = 7.375;
 const double rWheelDist = 7.375;
+
+struct Toggle{
+    bool state = false;
+    bool latch = false;
+
+    void check(bool cond){
+      if (cond){
+        if (!latch){
+          state  = !state;
+          latch = true;
+        }
+        }else{
+        latch = false;
+        }
+    }
+};
+
+Toggle tlatch;
+  Toggle clatch;
+  Toggle a1latch;
+  Toggle a2latch;
