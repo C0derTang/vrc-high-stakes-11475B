@@ -29,6 +29,10 @@ motor rm1(7, true);
 motor rm2(8, true);
 motor rm3(9, true);
 
+motor arm(12, true);
+digital_out armp1(Thinky.ThreeWirePort.A);
+digital_out armp2(Thinky.ThreeWirePort.B);
+
 inertial whee(15);
 
 
@@ -37,8 +41,12 @@ motor_group rightMotor1(rm1,rm2);
 
 motor_group leftMotor(lm1, lm2, lm3);
 motor_group rightMotor(rm1, rm2, rm3);
-motor arm(12);
-motor intake(3,ratio36_1);
+
+motor intake1(3,ratio18_1);
+motor intake2(4, ratio18_1, true);
+motor_group intake(intake1, intake2);
+
+
 digital_out clamp = digital_out(Thinky.ThreeWirePort.G);
 
 controller sticks;
@@ -53,6 +61,23 @@ encoder rquad = encoder(Thinky.ThreeWirePort.E);
 /*                          Pre-Autonomous Functions                         */
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
+
+struct Toggle{
+    bool state = false;
+    bool latch = false;
+
+    void check(bool cond){
+      if (cond){
+        if (!latch){
+          state  = !state;
+          latch = true;
+        }
+        }else{
+        latch = false;
+        }
+    }
+};
+
 
 void reset(){
   lquad.resetRotation();
@@ -211,11 +236,14 @@ void usercontrol(void) {
   task odom(odometry);
   enableDrivePID = false;
   enableTurnPID=false;
+  arm.setPosition(0, turns);
 
   turnImportance = 0.5;
 
-  transmission = false;
-  tlatch = false;
+  Toggle tlatch;
+  Toggle clatch;
+  Toggle a1latch;
+  Toggle a2latch;
 
   while (noBitches) {
     
@@ -224,7 +252,7 @@ void usercontrol(void) {
     // volts gives more power, apparently
     double turnVolts = turnVal * 0.12;
     double fwdVolts = fwdVal * 0.12 * (1-(abs(turnVolts/12.0)) * turnImportance);
-    if (transmission){
+    if (tlatch.state){
       leftMotor1.spin(forward, fwdVolts + turnVolts, voltageUnits::volt);
       rightMotor1.spin(forward, fwdVolts - turnVolts, voltageUnits::volt);
     }else{
@@ -232,7 +260,11 @@ void usercontrol(void) {
       rightMotor.spin(forward, fwdVolts - turnVolts, voltageUnits::volt);
     }
 
-    clamp.set(clamped);
+    clamp.set(clatch.state);
+    armp1.set(a1latch.state);
+    if (a1latch.state) arm.spinToPosition(4.5, turns,false);
+    else arm.spinToPosition(0, turns, false);
+    armp2.set(a2latch.state);
 
     if (sticks.ButtonL1.pressing()){
       intake.spin(forward);
@@ -242,14 +274,10 @@ void usercontrol(void) {
       intake.stop();
     }
 
-    if (sticks.ButtonA.pressing()){
-      if (!tlatch){
-        clamped = !clamped;
-        tlatch = true;
-      }
-    }else{
-      tlatch = false;
-    }
+    tlatch.check(sticks.ButtonA.pressing()); // transmission
+    clatch.check(sticks.ButtonR1.pressing()); // clamp
+    a1latch.check(sticks.ButtonX.pressing()); // transmission
+    a2latch.check(sticks.ButtonY.pressing()); // clamp
 
     wait(20, msec); 
   }

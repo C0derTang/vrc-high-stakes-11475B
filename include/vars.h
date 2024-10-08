@@ -43,8 +43,6 @@ bool noBitches = true; //conditional for driver control loop -- the code doesn't
 double turnImportance = 0.5;
 
 //transmission settings
-bool transmission = false;
-bool tlatch = false;
 
 bool clamped = false;
 
