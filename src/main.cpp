@@ -72,6 +72,11 @@ void reset(){
   whee.setHeading(0, degrees);
   curDeg=0;
 }
+void dreset(){
+  lquad.resetRotation();
+  rquad.resetRotation();
+
+}
 
 void pre_auton(void) {
 
@@ -196,20 +201,19 @@ int drivePID(){
 
 void autonomous(void) {
   reset();
-  task odom(odometry);
   task dpid(drivePID);
   task hpid(headingPID);
   targetDeg=45;
-  /*
+  
   for(int i=0; i<4; ++i){
-  driveDist+=96;
+    dreset();
+  driveDist=96;
   wait(4, seconds);
   enableDrivePID=false;
   targetDeg=45;
   wait(2, seconds);
   enableDrivePID=true;
   }
-  */
   //task tpid(turnPID);
   
 }
