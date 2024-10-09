@@ -250,8 +250,6 @@ void usercontrol(void) {
 
     clamp.set(clatch.state);
     armp1.set(a1latch.state);
-    if (a1latch.state) arm.spinToPosition(4.5, turns,false);
-    else arm.spinToPosition(0, turns, false);
     armp2.set(a2latch.state);
     armp3.set(!a2latch.state);
 
@@ -261,6 +259,14 @@ void usercontrol(void) {
       intake.spin(reverse);
     }else{
       intake.stop();
+    }
+
+    if (sticks.ButtonUp.pressing()){
+      arm.spin(forward);
+    }else if(sticks.ButtonDown.pressing()){
+      arm.spin(reverse);
+    }else{
+      arm.stop();
     }
 
     tlatch.check(sticks.ButtonA.pressing()); // transmission
