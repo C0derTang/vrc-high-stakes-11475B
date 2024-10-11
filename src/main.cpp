@@ -22,19 +22,21 @@ competition Competition;
 // define your global instances of motors and other devices here
 brain Thinky;
 
-motor lm1(0, false);
-motor lm2(1, false);
-motor lm3(2, false);
+motor lm1(1, false);
+motor lm2(2, false);
+motor lm3(0, false);
 motor rm1(7, true);
 motor rm2(8, true);
 motor rm3(9, true);
 
-motor arm(12, true);
-digital_out armp1(Thinky.ThreeWirePort.A);
-digital_out armp2(Thinky.ThreeWirePort.B);
-digital_out armp3(Thinky.ThreeWirePort.D);
+motor arm(3);
+digital_out armp1 = digital_out(Thinky.ThreeWirePort.A);
+digital_out armp2 = digital_out(Thinky.ThreeWirePort.C);
 
-inertial whee(15);
+inertial whee(10);
+
+
+limit  armreset  = limit(Thinky.ThreeWirePort.B);
 
 
 motor_group leftMotor1(lm1,lm2);
@@ -43,16 +45,16 @@ motor_group rightMotor1(rm1,rm2);
 motor_group leftMotor(lm1, lm2, lm3);
 motor_group rightMotor(rm1, rm2, rm3);
 
-motor intake1(3,ratio18_1);
-motor intake2(4, ratio18_1, true);
+motor intake1(5,ratio18_1);
+motor intake2(6, ratio18_1, true);
 motor_group intake(intake1, intake2);
 
 
-digital_out clamp = digital_out(Thinky.ThreeWirePort.G);
+digital_out clamp = digital_out(Thinky.ThreeWirePort.D);
 
 controller sticks;
 
-encoder lquad = encoder(Thinky.ThreeWirePort.C);
+encoder lquad = encoder(Thinky.ThreeWirePort.G);
 encoder rquad = encoder(Thinky.ThreeWirePort.E);
 //encoder bquad = encoder(Thinky.ThreeWirePort.C);
 
@@ -92,6 +94,7 @@ void pre_auton(void) {
   
 }
 
+// Unit Conversions
 double inchtodegrees(double val){
   double rotations = val/(4.125*PI);
   double degrees = rotations*360;
@@ -210,7 +213,7 @@ void autonomous(void) {
   driveDist=96;
   wait(4, seconds);
   enableDrivePID=false;
-  targetDeg=45;
+  targetDeg+=45;
   wait(2, seconds);
   enableDrivePID=true;
   }
@@ -234,7 +237,6 @@ void usercontrol(void) {
   turnImportance = 0.5;
 
   while (noBitches) {
-    
     double turnVal = sticks.Axis1.position(percent);
     double fwdVal = sticks.Axis3.position(percent);
     // volts gives more power, apparently
@@ -247,11 +249,10 @@ void usercontrol(void) {
       leftMotor.spin(forward, fwdVolts + turnVolts, voltageUnits::volt);
       rightMotor.spin(forward, fwdVolts - turnVolts, voltageUnits::volt);
     }
-
     clamp.set(clatch.state);
     armp1.set(a1latch.state);
     armp2.set(a2latch.state);
-    armp3.set(!a2latch.state);
+    //armp3.set(!a2latch.state);
 
     if (sticks.ButtonL1.pressing()){
       intake.spin(forward);
@@ -261,8 +262,13 @@ void usercontrol(void) {
       intake.stop();
     }
 
-    if (sticks.ButtonUp.pressing()){
+
+    if (arm.position(degrees) < 7*85 && sticks.ButtonUp.pressing()){
       arm.spin(forward);
+    }else if (armreset.pressing()){
+      sticks.Screen.print("lmao");
+      arm.setPosition(0,degrees);
+      arm.stop();
     }else if(sticks.ButtonDown.pressing()){
       arm.spin(reverse);
     }else{
@@ -271,12 +277,11 @@ void usercontrol(void) {
 
     tlatch.check(sticks.ButtonA.pressing()); // transmission
     clatch.check(sticks.ButtonR1.pressing()); // clamp
-    a1latch.check(sticks.ButtonX.pressing());
-    a2latch.check(sticks.ButtonY.pressing());
+    a1latch.check(sticks.ButtonX.pressing()); // first arm pistons
+    a2latch.check(sticks.ButtonY.pressing()); // 2nd arm pistons
 
     
-
-    wait(20, msec); 
+    wait(10, msec); 
   }
 }
 
@@ -293,6 +298,6 @@ int main() {
 
   // Prevent main from exiting with an infinite loop.
   while (true) {
-    wait(100, msec);
+    wait(10, msec);
   }
 }

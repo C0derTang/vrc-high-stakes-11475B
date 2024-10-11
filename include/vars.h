@@ -51,6 +51,7 @@ const double PI = 3.14159265;
 const double lWheelDist = 7.375;
 const double rWheelDist = 7.375;
 
+// universal object for toggle states, makes variable management easier
 struct Toggle{
     bool state = false;
     bool latch = false;
