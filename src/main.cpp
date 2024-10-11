@@ -263,21 +263,21 @@ void usercontrol(void) {
     }
 
 
-    if (arm.position(degrees) < 7*85 && sticks.ButtonUp.pressing()){
+    if (arm.position(degrees) < 7*85 && sticks.ButtonR1.pressing()){
       arm.spin(forward);
     }else if (armreset.pressing()){
       sticks.Screen.print("lmao");
       arm.setPosition(0,degrees);
       arm.stop();
-    }else if(sticks.ButtonDown.pressing()){
+    }else if(sticks.ButtonR2.pressing()){
       arm.spin(reverse);
     }else{
       arm.stop();
     }
 
     tlatch.check(sticks.ButtonA.pressing()); // transmission
-    clatch.check(sticks.ButtonR1.pressing()); // clamp
-    a1latch.check(sticks.ButtonX.pressing()); // first arm pistons
+    clatch.check(sticks.ButtonX.pressing()); // clamp
+    a1latch.check(sticks.ButtonB.pressing()); // first arm pistons
     a2latch.check(sticks.ButtonY.pressing()); // 2nd arm pistons
 
     
