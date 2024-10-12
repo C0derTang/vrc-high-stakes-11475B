@@ -206,16 +206,18 @@ void autonomous(void) {
   reset();
   task dpid(drivePID);
   task hpid(headingPID);
-  targetDeg=45;
+  //targetDeg=45;
   
   for(int i=0; i<4; ++i){
     dreset();
-  driveDist=96;
-  wait(4, seconds);
-  enableDrivePID=false;
-  targetDeg+=45;
-  wait(2, seconds);
-  enableDrivePID=true;
+    driveDist=96;
+    break;
+    /*
+    wait(4, seconds);
+    enableDrivePID=false;
+    targetDeg+=45;
+    wait(2, seconds);
+    enableDrivePID=true;*/
   }
   //task tpid(turnPID);
   
@@ -263,7 +265,7 @@ void usercontrol(void) {
     }
 
 
-    if (arm.position(degrees) < 7*85 && sticks.ButtonR1.pressing()){
+    if (arm.position(degrees) < 700 && sticks.ButtonR1.pressing()){
       arm.spin(forward);
     }else if (armreset.pressing()){
       sticks.Screen.print("lmao");
