@@ -148,7 +148,7 @@ int headingPID() {
     // Use turn power to correct heading while driving
     leftMotor.spin(forward, lpower - turnPower, voltageUnits::volt);
     rightMotor.spin(forward, rpower + turnPower, voltageUnits::volt);
-/*
+
     sticks.Screen.clearScreen();
     sticks.Screen.print(rquad.position(degrees));
     sticks.Screen.print("\n");
@@ -156,7 +156,7 @@ int headingPID() {
     sticks.Screen.print("\n");
     sticks.Screen.print(whee.rotation(degrees));
     sticks.Screen.setCursor(0,0);
-*/
+
     task::sleep(20);
   }
   return 1;
@@ -214,7 +214,6 @@ int drivePID(){
 
 void autonomous(void) {
   reset();
-  task odom(odometry);
   task dpid(drivePID);
   task hpid(headingPID);
   //targetDeg=45;
@@ -226,6 +225,7 @@ void autonomous(void) {
     wait(4, seconds);
     enableDrivePID=false;
     targetDeg+=45;
+
 
   //task tpid(turnPID);
   
