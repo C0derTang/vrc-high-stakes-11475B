@@ -129,7 +129,7 @@ int odometry(){
 int headingPID() {
   while(enableTurnPID) {
     // Heading correction logic
-    double headingError = targetDeg - (-whee.rotation(degrees)/2);
+    double headingError = (whee.rotation(degrees)/2)-targetDeg;
         
     // Basic PID for heading correction
     turnTotalError += headingError;
@@ -148,7 +148,15 @@ int headingPID() {
     // Use turn power to correct heading while driving
     leftMotor.spin(forward, lpower - turnPower, voltageUnits::volt);
     rightMotor.spin(forward, rpower + turnPower, voltageUnits::volt);
-
+/*
+    sticks.Screen.clearScreen();
+    sticks.Screen.print(rquad.position(degrees));
+    sticks.Screen.print("\n");
+    sticks.Screen.print(lquad.position(degrees));
+    sticks.Screen.print("\n");
+    sticks.Screen.print(whee.rotation(degrees));
+    sticks.Screen.setCursor(0,0);
+*/
     task::sleep(20);
   }
   return 1;
@@ -157,7 +165,7 @@ int headingPID() {
 int drivePID(){
   while(true){
     if (!enableDrivePID) continue;
-    double lPos = lquad.position(degrees);
+    double lPos = -lquad.position(degrees);
     
     lerror = lPos-inchtodegrees(driveDist);
 
@@ -191,6 +199,8 @@ int drivePID(){
 
 
     // Let headingPID function handle heading correction
+        
+
     task::sleep(20);
   }
   return 1;
@@ -204,21 +214,19 @@ int drivePID(){
 
 void autonomous(void) {
   reset();
+  task odom(odometry);
   task dpid(drivePID);
   task hpid(headingPID);
   //targetDeg=45;
   
-  for(int i=0; i<4; ++i){
+
     dreset();
-    driveDist=96;
-    break;
-    /*
+    driveDist=12;
+    
     wait(4, seconds);
     enableDrivePID=false;
     targetDeg+=45;
-    wait(2, seconds);
-    enableDrivePID=true;*/
-  }
+
   //task tpid(turnPID);
   
 }
@@ -268,7 +276,6 @@ void usercontrol(void) {
     if (arm.position(degrees) < 700 && sticks.ButtonR1.pressing()){
       arm.spin(forward);
     }else if (armreset.pressing()){
-      sticks.Screen.print("lmao");
       arm.setPosition(0,degrees);
       arm.stop();
     }else if(sticks.ButtonR2.pressing()){
