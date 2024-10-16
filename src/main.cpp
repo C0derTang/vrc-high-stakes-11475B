@@ -81,7 +81,7 @@ void dreset(){
 }
 
 void pre_auton(void) {
-
+  //whee.calibrate(2);
   // All activities that occur before the competition starts
   // Example: clearing encoders, setting servo positions, bathroom break etc.
   leftMotor.setStopping(coast);
@@ -117,8 +117,6 @@ int odometry(){
     sticks.Screen.clearScreen();
     
     sticks.Screen.print(whee.heading(degrees));
-    sticks.Screen.print("\n");
-    sticks.Screen.print(curDeg);
     sticks.Screen.setCursor(0,0);
     
     task::sleep(20);
@@ -146,17 +144,15 @@ int headingPID() {
     if (turnPower > 12.0) turnPower = 12.0;
 
     // Use turn power to correct heading while driving
-    leftMotor.spin(forward, lpower - turnPower, voltageUnits::volt);
-    rightMotor.spin(forward, rpower + turnPower, voltageUnits::volt);
-
+    leftMotor.spin(forward,(lpower - turnPower)*1, voltageUnits::volt);
+    rightMotor.spin(forward, (rpower + turnPower*.95), voltageUnits::volt);
+    
     sticks.Screen.clearScreen();
-    sticks.Screen.print(rquad.position(degrees));
-    sticks.Screen.print("\n");
-    sticks.Screen.print(lquad.position(degrees));
-    sticks.Screen.print("\n");
     sticks.Screen.print(whee.rotation(degrees));
+    sticks.Screen.print("\n");
+    sticks.Screen.print(headingError);
     sticks.Screen.setCursor(0,0);
-
+    
     task::sleep(20);
   }
   return 1;
@@ -178,8 +174,8 @@ int drivePID(){
     // Calculate drive power (forward movement)
     lpower = lerror * kP + ltotalError * kI + lderivative * kD;
 
-    if (lpower < -12.0) lpower = -12.0;
-    if (lpower > 12.0) lpower = 12.0;
+    if (lpower < -6.0) lpower = -6.0;
+    if (lpower > 6.0) lpower = 6.0;
 
     double rPos = rquad.position(degrees);
     
@@ -214,21 +210,29 @@ int drivePID(){
 
 void autonomous(void) {
   reset();
+  dreset();
   task dpid(drivePID);
   task hpid(headingPID);
-  //targetDeg=45;
-  
-
-    dreset();
-    driveDist=12;
+  targetDeg=30;
+  wait(1,seconds);
+    // DRIVE FORWARD AND SCORE PRELOAD ONTO STAKE
     
-    wait(4, seconds);
-    enableDrivePID=false;
-    targetDeg+=45;
+    driveDist=-30;
+    wait(1.1, seconds);
+    clamp.set(true);
+    wait(.5,seconds);
+    wait(0.5,seconds);
+    intake.spin(reverse);
+    wait(2,seconds);
+    //TURN
+    targetDeg-=45;
+    dreset();
+    driveDist=24;
+    enableDrivePID=true;
+    
 
-
-  //task tpid(turnPID);
-  
+dpid.stop();
+hpid.stop();
 }
 
 /*---------------------------------------------------------------------------*/
