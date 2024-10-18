@@ -6,8 +6,8 @@ double kP = 0.03;
 double kI = 0.00000001;
 double kD = 0.05;
 //turn
-double tkP = .2;
-double tkI = 0.0003;
+double tkP = .15;
+double tkI = 0.000005;
 double tkD =0.05;
 
 // Autonomous settings
@@ -72,3 +72,5 @@ Toggle tlatch;
   Toggle clatch;
   Toggle a1latch;
   Toggle a2latch;
+
+double speed = 12.0;

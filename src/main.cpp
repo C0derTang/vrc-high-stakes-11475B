@@ -127,7 +127,7 @@ int odometry(){
 int headingPID() {
   while(enableTurnPID) {
     // Heading correction logic
-    double headingError = (whee.rotation(degrees)/2)-targetDeg;
+    double headingError = (whee.rotation(degrees))-targetDeg;
         
     // Basic PID for heading correction
     turnTotalError += headingError;
@@ -144,8 +144,8 @@ int headingPID() {
     if (turnPower > 12.0) turnPower = 12.0;
 
     // Use turn power to correct heading while driving
-    leftMotor.spin(forward,(lpower - turnPower)*1, voltageUnits::volt);
-    rightMotor.spin(forward, (rpower + turnPower*.95), voltageUnits::volt);
+    leftMotor.spin(forward,(lpower - turnPower), voltageUnits::volt);
+    rightMotor.spin(forward, (lpower + turnPower), voltageUnits::volt);
     
     sticks.Screen.clearScreen();
     sticks.Screen.print(whee.rotation(degrees));
@@ -153,12 +153,12 @@ int headingPID() {
     sticks.Screen.print(headingError);
     sticks.Screen.setCursor(0,0);
     
-    task::sleep(20);
+    task::sleep(5);
   }
   return 1;
 }
 
-int drivePID(){
+int ldrivePID(){
   while(true){
     if (!enableDrivePID) continue;
     double lPos = -lquad.position(degrees);
@@ -174,9 +174,18 @@ int drivePID(){
     // Calculate drive power (forward movement)
     lpower = lerror * kP + ltotalError * kI + lderivative * kD;
 
-    if (lpower < -6.0) lpower = -6.0;
-    if (lpower > 6.0) lpower = 6.0;
+    if (lpower < -speed) lpower = -speed;
+    if (lpower > speed) lpower = speed;
+    
 
+    task::sleep(20);
+  }
+  return 1;
+}
+
+int rdrivePID(){
+  while(true){
+    if (!enableDrivePID) continue;
     double rPos = rquad.position(degrees);
     
     rerror = rPos-inchtodegrees(driveDist);
@@ -190,14 +199,11 @@ int drivePID(){
     // Calculate drive power (forward movement)
     rpower = rerror * kP + rtotalError * kI + rderivative * kD;
 
-    if (rpower < -12.0) rpower = -12.0;
-    if (rpower > 12.0) rpower = 12.0;
+    if (rpower < -8.0) rpower = -8.0;
+    if (rpower > 8.0) rpower = 8.0;
+    
 
-
-    // Let headingPID function handle heading correction
-        
-
-    task::sleep(20);
+    task::sleep(10);
   }
   return 1;
 }
@@ -211,11 +217,52 @@ int drivePID(){
 void autonomous(void) {
   reset();
   dreset();
-  task dpid(drivePID);
+  
+  task ldpid(ldrivePID);
   task hpid(headingPID);
+  targetDeg= 28;
+  wait(1.3,seconds);
+    // DRIVE FORWARD AND SCORE PRELOAD ONTO STAKE LEFT SIDE
+    dreset();
+    speed=12.0;
+    driveDist=-30;
+    wait(.8, seconds);
+    clamp.set(true);
+    wait(.5,seconds);
+    wait(0.5,seconds);
+    intake.spin(reverse);
+    wait(1.2,seconds);
+    intake.stop();
+    dreset();
+    driveDist=10;
+    wait(1,seconds);
+    dreset();
+    driveDist=-5;
+    wait(1,seconds);
+    clamp.set(false);
+
+    /*
+    dreset();
+    driveDist=14;
+    wait(1,seconds);
+    targetDeg+=60;
+    wait(1,seconds);
+    
+    dreset();
+    driveDist=-40;
+    wait(3,seconds);*/
+    //TURN
+    /*
+    targetDeg+=45;
+    wait(2,seconds);
+    dreset();
+    driveDist=24;
+    wait(3,seconds);
+    enableDrivePID=true;*/
+/*
   targetDeg=30;
   wait(1,seconds);
-    // DRIVE FORWARD AND SCORE PRELOAD ONTO STAKE
+    // DRIVE FORWARD AND SCORE PRELOAD ONTO STAKE LEFT SIDE
     
     driveDist=-30;
     wait(1.1, seconds);
@@ -228,10 +275,10 @@ void autonomous(void) {
     targetDeg-=45;
     dreset();
     driveDist=24;
-    enableDrivePID=true;
+    enableDrivePID=true;*/
     
 
-dpid.stop();
+ldpid.stop();
 hpid.stop();
 }
 
@@ -288,7 +335,7 @@ void usercontrol(void) {
       arm.stop();
     }
 
-    tlatch.check(sticks.ButtonA.pressing()); // transmission
+    //tlatch.check(sticks.ButtonA.pressing()); // transmission
     clatch.check(sticks.ButtonX.pressing()); // clamp
     a1latch.check(sticks.ButtonB.pressing()); // first arm pistons
     a2latch.check(sticks.ButtonY.pressing()); // 2nd arm pistons
