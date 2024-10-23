@@ -77,11 +77,11 @@ void reset(){
 void dreset(){
   lquad.resetRotation();
   rquad.resetRotation();
+  driveDist=0;
 
 }
 
-void pre_auton(void) {
-  //whee.calibrate(2);
+void pre_auton(void) { // in da stripped club, straiht up jorkin' it. and  by it
   // All activities that occur before the competition starts
   // Example: clearing encoders, setting servo positions, bathroom break etc.
   leftMotor.setStopping(coast);
@@ -107,22 +107,7 @@ double radtodegrees(double val){
   return val*180/PI;
 }
 
-int odometry(){
-  //very rudimentary, just degree tracking right now
-  while(true){
-    curDeg += ((lquad.position(degrees)-prevL) - (rquad.position(degrees)-prevR)) / (lWheelDist + rWheelDist);
-    prevL = lquad.position(degrees);
-    prevR = rquad.position(degrees);
 
-    sticks.Screen.clearScreen();
-    
-    sticks.Screen.print(whee.heading(degrees));
-    sticks.Screen.setCursor(0,0);
-    
-    task::sleep(20);
-  }
-  return 1;
-}
 
 int headingPID() {
   while(enableTurnPID) {
@@ -150,7 +135,7 @@ int headingPID() {
     sticks.Screen.clearScreen();
     sticks.Screen.print(whee.rotation(degrees));
     sticks.Screen.print("\n");
-    sticks.Screen.print(headingError);
+    sticks.Screen.print(lquad.position(degrees));
     sticks.Screen.setCursor(0,0);
     
     task::sleep(5);
@@ -160,7 +145,10 @@ int headingPID() {
 
 int ldrivePID(){
   while(true){
-    if (!enableDrivePID) continue;
+    if (!enableDrivePID){
+      task::sleep(20);
+      continue;
+    }
     double lPos = -lquad.position(degrees);
     
     lerror = lPos-inchtodegrees(driveDist);
@@ -183,30 +171,6 @@ int ldrivePID(){
   return 1;
 }
 
-int rdrivePID(){
-  while(true){
-    if (!enableDrivePID) continue;
-    double rPos = rquad.position(degrees);
-    
-    rerror = rPos-inchtodegrees(driveDist);
-
-    rtotalError += rerror;
-    if(abs(rerror)<.01 || abs(rerror) > 20) rtotalError=0;
-
-    rderivative = rerror-rprevError;
-    rprevError=rerror;
-
-    // Calculate drive power (forward movement)
-    rpower = rerror * kP + rtotalError * kI + rderivative * kD;
-
-    if (rpower < -8.0) rpower = -8.0;
-    if (rpower > 8.0) rpower = 8.0;
-    
-
-    task::sleep(10);
-  }
-  return 1;
-}
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -217,29 +181,28 @@ int rdrivePID(){
 void autonomous(void) {
   reset();
   dreset();
+  curDeg=0;
+  whee.setHeading(20, degrees);
   
   task ldpid(ldrivePID);
   task hpid(headingPID);
-  targetDeg= 28;
-  wait(1.3,seconds);
-    // DRIVE FORWARD AND SCORE PRELOAD ONTO STAKE LEFT SIDE
+  //11.5 forward
+  //-30
+  //forward
+  ///clamp
+    
     dreset();
     speed=12.0;
-    driveDist=-30;
+    driveDist=-11.5;
     wait(.8, seconds);
-    clamp.set(true);
-    wait(.5,seconds);
-    wait(0.5,seconds);
-    intake.spin(reverse);
-    wait(1.2,seconds);
-    intake.stop();
-    dreset();
-    driveDist=10;
+
+    enableDrivePID=false;
+    targetDeg=-30;
     wait(1,seconds);
     dreset();
-    driveDist=-5;
-    wait(1,seconds);
-    clamp.set(false);
+    enableDrivePID=true;
+    driveDist=-11.5;
+    wait(.7,seconds);
 
     /*
     dreset();
@@ -290,7 +253,6 @@ hpid.stop();
 
 void usercontrol(void) {
   reset();
-  task odom(odometry);
   enableDrivePID = false;
   enableTurnPID=false;
   arm.setPosition(0, turns);
