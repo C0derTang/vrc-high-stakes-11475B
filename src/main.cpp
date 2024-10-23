@@ -192,17 +192,37 @@ void autonomous(void) {
   ///clamp
     
     dreset();
-    speed=12.0;
+    speed=10.0;
     driveDist=-11.5;
-    wait(.8, seconds);
+    wait(1, seconds);
 
     enableDrivePID=false;
     targetDeg=-30;
     wait(1,seconds);
     dreset();
     enableDrivePID=true;
-    driveDist=-11.5;
-    wait(.7,seconds);
+    speed=5.0;
+    driveDist=-12;
+    wait(1.4,seconds);
+    clamp.set(true);
+    wait(.4,seconds);
+    intake.spin(reverse);
+    wait(1,seconds);
+    driveDist = -24;
+    wait(1.4,seconds);
+    clamp.set(false);
+    driveDist = -12;
+    wait(1,seconds);
+    enableDrivePID=false;
+    targetDeg += 60;
+    wait(1,seconds);
+    
+    dreset();
+    enableDrivePID=true;
+    driveDist = -30;
+    wait(4,seconds);
+    clamp.set(true);
+
 
     /*
     dreset();
