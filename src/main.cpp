@@ -195,33 +195,35 @@ void autonomous(void) {
     speed=10.0;
     driveDist=-11.5;
     wait(1, seconds);
-
     enableDrivePID=false;
-    targetDeg=-30;
-    wait(1,seconds);
+    targetDeg=30;
+    wait(.8,seconds);
     dreset();
     enableDrivePID=true;
     speed=5.0;
     driveDist=-12;
-    wait(1.4,seconds);
+    wait(1.2,seconds);
     clamp.set(true);
     wait(.4,seconds);
+    
     intake.spin(reverse);
     wait(1,seconds);
-    driveDist = -24;
-    wait(1.4,seconds);
-    clamp.set(false);
-    driveDist = -12;
+    speed=10.0;
+    driveDist = -20;
+  
     wait(1,seconds);
     enableDrivePID=false;
-    targetDeg += 60;
+    speed=5.0;
+    targetDeg = 90;
     wait(1,seconds);
     
     dreset();
     enableDrivePID=true;
-    driveDist = -30;
-    wait(4,seconds);
-    clamp.set(true);
+    speed=5.0;
+    driveDist = 30;
+    wait(1.5,seconds);
+    driveDist = -20;
+    wait(5,seconds);    
 
 
     /*
