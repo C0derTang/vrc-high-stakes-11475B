@@ -31,7 +31,8 @@ double rderivative=0;
 double rtotalError = 0; //integral
 
 //turn PID vals
-double turnError = 0;
+double headingError=0;
+double turnPower=0;
 double turnPrevError = 0;
 double turnDerivative=0;
 double turnTotalError = 0; //integral
