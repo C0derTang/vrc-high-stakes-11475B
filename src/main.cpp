@@ -207,7 +207,7 @@ void autonomous(void) {
   ///clamp
     
     drivefor(-11.5,10.0);
-    turnto(-30.0);
+    turnto(30.0);
     drivefor(-12.0,5.0);
     clamp.set(true);
     wait(.4,seconds);
@@ -216,51 +216,13 @@ void autonomous(void) {
     wait(1,seconds);
     drivefor(-5.0, 10.0);
   
-    turnto(-90.0);
+    turnto(90.0);
     drivefor(25.0,5.0);
-    drivefor(-25.0,10.0);
-    
-    turnto(-45.0);
-    intake.stop();
-    drivefor(-10.0,5.0);
-    wait(4,sec);
+    wait(.1,sec)
+    turnto(180.0);
+    drivefor(12.0,10.0);
+    wait(5,sec);
 
-    /*
-    dreset();
-    driveDist=14;
-    wait(1,seconds);
-    targetDeg+=60;
-    wait(1,seconds);
-    
-    dreset();
-    driveDist=-40;
-    wait(3,seconds);*/
-    //TURN
-    /*
-    targetDeg+=45;
-    wait(2,seconds);
-    dreset();
-    driveDist=24;
-    wait(3,seconds);
-    enableDrivePID=true;*/
-/*
-  targetDeg=30;
-  wait(1,seconds);
-    // DRIVE FORWARD AND SCORE PRELOAD ONTO STAKE LEFT SIDE
-    
-    driveDist=-30;
-    wait(1.1, seconds);
-    clamp.set(true);
-    wait(.5,seconds);
-    wait(0.5,seconds);
-    intake.spin(reverse);
-    wait(2,seconds);
-    //TURN
-    targetDeg-=45;
-    dreset();
-    driveDist=24;
-    enableDrivePID=true;*/
-    
 
 ldpid.stop();
 hpid.stop();
