@@ -207,7 +207,15 @@ void autonomous(void) {
     drivefor(-20,4);
     clamp.set(true);
     turnto(90);
-    intake.spin()
+    intake.spin(reverse);
+    drivefor(36,12);
+    drivefor(-6,10);
+    turnto(180);
+    drivefor(6,12);
+    turnto(280);
+    drivefor(-10,12)
+    clamp.set(false);
+
 
 
 ldpid.stop();
