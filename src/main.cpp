@@ -197,31 +197,17 @@ void autonomous(void) {
   reset();
   dreset();
   curDeg=0;
-  whee.setHeading(20, degrees);
   
   task ldpid(ldrivePID);
   task hpid(headingPID);
-  //11.5 forward
-  //-30
-  //forward
-  ///clamp
-    
-    drivefor(-11.5,10.0);
-    turnto(30.0);
-    drivefor(-12.0,5.0);
-    clamp.set(true);
-    wait(.4,seconds);
-    
-    intake.spin(reverse);
-    wait(1,seconds);
-    drivefor(-5.0, 10.0);
   
-    turnto(90.0);
-    drivefor(25.0,5.0);
-    wait(.1,sec)
-    turnto(180.0);
-    drivefor(12.0,10.0);
-    wait(5,sec);
+    
+    drivefor(8,10);
+    turnto(-90);
+    drivefor(-20,4);
+    clamp.set(true);
+    turnto(90);
+    intake.spin()
 
 
 ldpid.stop();
