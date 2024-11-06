@@ -91,12 +91,13 @@ lquad.setPosition(0,deg);
 }
 
 void drivefor(double amt, double spd){
-  dreset();
   enableDrivePID=true;
+  dreset();
+  
   speed=spd;
   driveDist=amt;
   lerror=driveDist;
-  while(abs(lerror)>3) wait(5,msec);
+  while(abs(lerror)>5) wait(5,msec);
   wait(10,msec);
   enableDrivePID=false;
 }
@@ -149,7 +150,7 @@ int headingPID() {
     sticks.Screen.clearScreen();
     sticks.Screen.print(lerror);
     sticks.Screen.print("\n");
-        sticks.Screen.print(headingError);
+        sticks.Screen.print(lpower);
 
     sticks.Screen.setCursor(0,0);
     
@@ -181,7 +182,7 @@ int ldrivePID(){
     if (lpower > speed) lpower = speed;
     
 
-    task::sleep(20);
+    task::sleep(5);
   }
   return 1;
 }
@@ -202,20 +203,20 @@ void autonomous(void) {
   task hpid(headingPID);
   
     
-    drivefor(8,10);
-    turnto(-90);
-    drivefor(-20,4);
+    drivefor(-11.5,10.0);
+    turnto(30.0);
+    drivefor(-12.0,5.0);
     clamp.set(true);
-    turnto(90);
-    intake.spin(reverse);
-    drivefor(36,12);
-    drivefor(-6,10);
-    turnto(180);
-    drivefor(6,12);
-    turnto(280);
-    drivefor(-10,12)
-    clamp.set(false);
+    wait(.4,seconds);
+    wait(1,seconds);
+    drivefor(-5.0, 10.0);
 
+    turnto(90.0);
+    drivefor(25.0,5.0);
+    wait(.1,sec)
+    turnto(180.0);
+    drivefor(12.0,10.0);
+    wait(5,sec);
 
 
 ldpid.stop();
