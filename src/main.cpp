@@ -100,7 +100,9 @@ double radtodegrees(double val){
 
 
 void turnto(float targetDeg) {
-  while(abs(curDeg-targetDeg)>1) {
+  turnTotalError=0;
+  headingError=(whee.rotation(degrees))-targetDeg;
+  while(abs(headingError)>2 || abs(leftMotor.velocity(percent))>3) {
     // Heading correction logic
     headingError = (whee.rotation(degrees))-targetDeg;
         
@@ -118,16 +120,23 @@ void turnto(float targetDeg) {
     if (turnPower < -12.0) turnPower = -12.0;
     if (turnPower > 12.0) turnPower = 12.0;
 
+    sticks.Screen.clearScreen();
+    sticks.Screen.setCursor(0,0);
+    sticks.Screen.print(headingError);
+    
+
     // Use turn power to correct heading while driving
-    leftMotor.spin(forward,(lpower - turnPower), voltageUnits::volt);
-    rightMotor.spin(forward, (lpower + turnPower), voltageUnits::volt);
-        
+      leftMotor.spin(forward,(-turnPower), voltageUnits::volt);
+  rightMotor.spin(forward, (turnPower), voltageUnits::volt);
+  wait(10,msec);
   }
 }
 
 void drivefor(float driveDist, float speed){
   lquad.setPosition(0,deg);
-  while(abs(-lquad.position(degrees)-inchtodegrees(driveDist))>1){
+  lerror = -inchtodegrees(driveDist);
+  ltotalError=0;
+  while(abs(lerror)>5 || abs(lpower)>.5){
     double lPos = -lquad.position(degrees);
     
     lerror = lPos-inchtodegrees(driveDist);
@@ -143,7 +152,11 @@ void drivefor(float driveDist, float speed){
 
     if (lpower < -speed) lpower = -speed;
     if (lpower > speed) lpower = speed;
-    
+    sticks.Screen.print(lerror);
+    sticks.Screen.clearScreen();
+    sticks.Screen.setCursor(0,0);
+    leftMotor.spin(forward,(lpower ), voltageUnits::volt);
+    rightMotor.spin(forward, (lpower ), voltageUnits::volt);
 
   }
 }
@@ -158,10 +171,13 @@ void drivefor(float driveDist, float speed){
 void autonomous(void) {
   reset();
   curDeg=0;
-  
     
-    drivefor(-11.5,10.0);
+    //drivefor(-11.5,10.0);
+    turnto(-90);
+    drivefor(-12,12);
+    /*
     turnto(-30.0);
+    
     drivefor(-12.0,5.0);
     clamp.set(true);
     wait(.4,seconds);
@@ -172,7 +188,7 @@ void autonomous(void) {
     drivefor(25.0,5.0);
     wait(.1,sec);
     turnto(-180.0);
-    drivefor(12.0,10.0);
+    drivefor(12.0,10.0);*/
     wait(5,sec);
 
 
