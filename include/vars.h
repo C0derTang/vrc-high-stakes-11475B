@@ -4,7 +4,7 @@
 //straight tuning
 double kP = 0.03;
 double kI = 0.000003;
-double kD = 0.05;
+double kD = 0.07;
 //turn
 double tkP = .15;
 double tkI = .028;
