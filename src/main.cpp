@@ -208,6 +208,7 @@ void autonomous(void) {
     drivefor(-12.0,5.0);
     clamp.set(true);
     wait(.4,seconds);
+    intake.spin(forward);
     wait(1,seconds);
     drivefor(-5.0, 10.0);
 
