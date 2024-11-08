@@ -157,6 +157,7 @@ void drivefor(float driveDist, float speed){
     sticks.Screen.setCursor(0,0);
     leftMotor.spin(forward,(lpower ), voltageUnits::volt);
     rightMotor.spin(forward, (lpower ), voltageUnits::volt);
+      wait(10,msec);
 
   }
 }
