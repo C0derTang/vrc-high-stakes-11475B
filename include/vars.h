@@ -18,7 +18,6 @@ double driveDist = 0;
 double prevL = 0;
 double prevR = 0;
 double curDeg = 0;
-double targetDeg = 0;
 
 //lateral PID vals for left and right
 double lerror = 0;

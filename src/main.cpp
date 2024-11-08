@@ -83,31 +83,6 @@ void reset(){
   whee.setHeading(0, degrees);
   curDeg=0;
 }
-void dreset(){
-lquad.setPosition(0,deg);
-  rquad.resetRotation();
-  driveDist=0;
-
-}
-
-void drivefor(double amt, double spd){
-  enableDrivePID=true;
-  dreset();
-  
-  speed=spd;
-  driveDist=amt;
-  lerror=driveDist;
-  while(abs(lerror)>5) wait(5,msec);
-  wait(10,msec);
-  enableDrivePID=false;
-}
-void turnto(double head){
-  targetDeg=head;
-  headingError=targetDeg;
-    while (abs(headingError)>3) wait(5,msec);
-    wait(10,msec);
-
-}
 
 // Unit Conversions
 double inchtodegrees(double val){
@@ -124,8 +99,8 @@ double radtodegrees(double val){
 
 
 
-int headingPID() {
-  while(enableTurnPID) {
+void turnto(float targetDeg) {
+  while(abs(curDeg-targetDeg)>1) {
     // Heading correction logic
     headingError = (whee.rotation(degrees))-targetDeg;
         
@@ -146,25 +121,13 @@ int headingPID() {
     // Use turn power to correct heading while driving
     leftMotor.spin(forward,(lpower - turnPower), voltageUnits::volt);
     rightMotor.spin(forward, (lpower + turnPower), voltageUnits::volt);
-    
-    sticks.Screen.clearScreen();
-    sticks.Screen.print(lerror);
-    sticks.Screen.print("\n");
-        sticks.Screen.print(lpower);
-
-    sticks.Screen.setCursor(0,0);
-    
-    task::sleep(5);
+        
   }
-  return 1;
 }
 
-int ldrivePID(){
-  while(true){
-    if (!enableDrivePID){
-      task::sleep(20);
-      continue;
-    }
+void drivefor(float driveDist, float speed){
+  lquad.setPosition(0,deg);
+  while(abs(-lquad.position(degrees)-inchtodegrees(driveDist))>1){
     double lPos = -lquad.position(degrees);
     
     lerror = lPos-inchtodegrees(driveDist);
@@ -182,9 +145,7 @@ int ldrivePID(){
     if (lpower > speed) lpower = speed;
     
 
-    task::sleep(5);
   }
-  return 1;
 }
 
 
@@ -196,11 +157,7 @@ int ldrivePID(){
 
 void autonomous(void) {
   reset();
-  dreset();
   curDeg=0;
-  
-  task ldpid(ldrivePID);
-  task hpid(headingPID);
   
     
     drivefor(-11.5,10.0);
@@ -219,8 +176,6 @@ void autonomous(void) {
     wait(5,sec);
 
 
-ldpid.stop();
-hpid.stop();
 }
 
 /*---------------------------------------------------------------------------*/
