@@ -9,6 +9,7 @@
 
 #include "vex.h"
 #include <cmath>
+//#include <string>
 #include "vars.h"
 
 // fuck best practices, im doing this:
@@ -64,7 +65,23 @@ encoder rquad = encoder(Thinky.ThreeWirePort.E);
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
 
-void pre_auton(void) {
+
+
+
+void reset(){
+  lquad.resetRotation();
+  rquad.resetRotation();
+  whee.setHeading(0, degrees);
+  curDeg=0;
+}
+void dreset(){
+  lquad.resetRotation();
+  rquad.resetRotation();
+  driveDist=0;
+
+}
+
+void pre_auton(void) { // in da stripped club, straiht up jorkin' it. and  by it
   // All activities that occur before the competition starts
   // Example: clearing encoders, setting servo positions, bathroom break etc.
   leftMotor.setStopping(coast);
@@ -75,38 +92,6 @@ void pre_auton(void) {
   intake.setVelocity(100, percent);
 
   
-}
-
-void reset(){
-  lquad.setPosition(0,deg);
-  rquad.resetRotation();
-  whee.setHeading(0, degrees);
-  curDeg=0;
-}
-void dreset(){
-lquad.setPosition(0,deg);
-  rquad.resetRotation();
-  driveDist=0;
-
-}
-
-void drivefor(double amt, double spd){
-  enableDrivePID=true;
-  dreset();
-  
-  speed=spd;
-  driveDist=amt;
-  lerror=driveDist;
-  while(abs(lerror)>5) wait(5,msec);
-  wait(10,msec);
-  enableDrivePID=false;
-}
-void turnto(double head){
-  targetDeg=head;
-  headingError=targetDeg;
-    while (abs(headingError)>3) wait(5,msec);
-    wait(10,msec);
-
 }
 
 // Unit Conversions
@@ -127,7 +112,7 @@ double radtodegrees(double val){
 int headingPID() {
   while(enableTurnPID) {
     // Heading correction logic
-    headingError = (whee.rotation(degrees))-targetDeg;
+    double headingError = (whee.rotation(degrees))-targetDeg;
         
     // Basic PID for heading correction
     turnTotalError += headingError;
@@ -137,7 +122,7 @@ int headingPID() {
     turnPrevError = headingError;
 
     // Adjust heading with PID terms
-    turnPower = headingError * tkP + turnTotalError * tkI + turnDerivative * tkD;
+    double turnPower = headingError * tkP + turnTotalError * tkI + turnDerivative * tkD;
 
     // Clamp the turn power
     if (turnPower < -12.0) turnPower = -12.0;
@@ -148,10 +133,9 @@ int headingPID() {
     rightMotor.spin(forward, (lpower + turnPower), voltageUnits::volt);
     
     sticks.Screen.clearScreen();
-    sticks.Screen.print(lerror);
+    sticks.Screen.print(whee.rotation(degrees));
     sticks.Screen.print("\n");
-        sticks.Screen.print(lpower);
-
+    sticks.Screen.print(lquad.position(degrees));
     sticks.Screen.setCursor(0,0);
     
     task::sleep(5);
@@ -182,7 +166,7 @@ int ldrivePID(){
     if (lpower > speed) lpower = speed;
     
 
-    task::sleep(5);
+    task::sleep(20);
   }
   return 1;
 }
@@ -198,35 +182,99 @@ void autonomous(void) {
   reset();
   dreset();
   curDeg=0;
+  whee.setHeading(20, degrees);
   
   task ldpid(ldrivePID);
   task hpid(headingPID);
-  
+  //11.5 forward
+  //-30
+  //forward
+  ///clamp
     
-    drivefor(8,10);
-    turnto(-90);
-    drivefor(-20,4);
+    dreset();
+    speed=10.0;
+    driveDist=-11.5;
+    wait(1, seconds);
+    enableDrivePID=false;
+    targetDeg=-30;
+    wait(.8,seconds);
+    dreset();
+    enableDrivePID=true;
+    speed=5.0;
+    driveDist=-12;
+    wait(1.2,seconds);
     clamp.set(true);
-    turnto(90);
+    wait(.4,seconds);
+    
     intake.spin(reverse);
+    wait(1,seconds);
+    speed=10.0;
+    driveDist = 20;
+  
+    wait(1,seconds);
+    enableDrivePID=false;
+    speed=5.0;
+    targetDeg = -90;
+    wait(1,seconds);
+    
+    dreset();
+    enableDrivePID=true;
+    speed=5.0;
+    driveDist = 30;
+    wait(1.5,seconds);
+    driveDist=18;
     wait(1,sec);
-    drivefor(26,6);
-    wait(3,sec);
-    drivefor(6,6);
+    enableDrivePID=false;
+    targetDeg=-180;
+    wait(.6,sec);
+    dreset();
+    enableDrivePID=true;
+    driveDist=17;
     wait(2,sec);
-    drivefor(-6,10);
-    turnto(180);
-    drivefor(6,10);
-    wait(1,sec);
-    turnto(315);
-    drivefor(-10,12);
-    clamp.set(false);
-    drivefor(20,12);
-    wait(100,sec);
-
+    driveDist=14;
+   wait(1,sec);
+    enableDrivePID=false;
 
 ldpid.stop();
 hpid.stop();
+    /*
+    dreset();
+    driveDist=14;
+    wait(1,seconds);
+    targetDeg+=60;
+    wait(1,seconds);
+    
+    dreset();
+    driveDist=-40;
+    wait(3,seconds);*/
+    //TURN
+    /*
+    targetDeg+=45;
+    wait(2,seconds);
+    dreset();
+    driveDist=24;
+    wait(3,seconds);
+    enableDrivePID=true;*/
+/*
+  targetDeg=30;
+  wait(1,seconds);
+    // DRIVE FORWARD AND SCORE PRELOAD ONTO STAKE LEFT SIDE
+    
+    driveDist=-30;
+    wait(1.1, seconds);
+    clamp.set(true);
+    wait(.5,seconds);
+    wait(0.5,seconds);
+    intake.spin(reverse);
+    wait(2,seconds);
+    //TURN
+    targetDeg-=45;
+    dreset();
+    driveDist=24;
+    enableDrivePID=true;*/
+    
+
+
 }
 
 /*---------------------------------------------------------------------------*/
