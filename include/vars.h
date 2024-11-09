@@ -3,12 +3,12 @@
 //PID variable tuning (will take fucking forever)
 //straight tuning
 double kP = 0.03;
-double kI = 0.000003;
-double kD = 0.07;
+double kI = 0.00001;
+double kD = 0.05;
 //turn
 double tkP = .15;
-double tkI = .028;
-double tkD = .106;
+double tkI = 0.000005;
+double tkD =0.05;
 
 // Autonomous settings
 double lpower = 0;
@@ -18,6 +18,7 @@ double driveDist = 0;
 double prevL = 0;
 double prevR = 0;
 double curDeg = 0;
+double targetDeg = 0;
 
 //lateral PID vals for left and right
 double lerror = 0;
@@ -30,8 +31,7 @@ double rderivative=0;
 double rtotalError = 0; //integral
 
 //turn PID vals
-double headingError=0;
-double turnPower=0;
+double turnError = 0;
 double turnPrevError = 0;
 double turnDerivative=0;
 double turnTotalError = 0; //integral
