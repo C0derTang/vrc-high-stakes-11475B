@@ -182,7 +182,6 @@ void autonomous(void) {
   reset();
   dreset();
   curDeg=0;
-  whee.setHeading(20, degrees);
   
   task ldpid(ldrivePID);
   task hpid(headingPID);
@@ -193,47 +192,60 @@ void autonomous(void) {
     
     dreset();
     speed=10.0;
-    driveDist=-11.5;
-    wait(1, seconds);
+    driveDist=8;
+    wait(.6, seconds);
     enableDrivePID=false;
-    targetDeg=-30;
-    wait(.8,seconds);
+    targetDeg=90;
+    wait(1,seconds);
     dreset();
     enableDrivePID=true;
     speed=5.0;
-    driveDist=-12;
-    wait(1.2,seconds);
+    driveDist=-15;
+    wait(1.5,seconds);
     clamp.set(true);
     wait(.4,seconds);
     
     intake.spin(reverse);
     wait(1,seconds);
-    speed=10.0;
-    driveDist = 20;
+    enableDrivePID=false;
+    targetDeg=-90;
+    wait(1.2,sec);
+    dreset();
+    enableDrivePID=true;
+    speed=8.0;
+    driveDist = 28;
   
-    wait(1,seconds);
+    wait(4,seconds);
+     speed=5.0;;
+    driveDist = 38;
+    wait(.6,seconds);
+    driveDist = 30;
+    wait(2,seconds);
     enableDrivePID=false;
     speed=5.0;
-    targetDeg = -90;
+    targetDeg = -180;
     wait(1,seconds);
     
     dreset();
     enableDrivePID=true;
     speed=5.0;
-    driveDist = 30;
-    wait(1.5,seconds);
-    driveDist=18;
-    wait(1,sec);
-    enableDrivePID=false;
-    targetDeg=-180;
+    driveDist = 10;
+    wait(1,seconds);
+    driveDist=-5;
     wait(.6,sec);
+    enableDrivePID=false;
+    targetDeg=45;
+    wait(1,sec);
     dreset();
     enableDrivePID=true;
-    driveDist=17;
+    speed=5.0;
+    driveDist = -30;
+    wait(1.5,seconds);
+    clamp.set(false);
+    driveDist=-10;
     wait(2,sec);
-    driveDist=14;
-   wait(1,sec);
     enableDrivePID=false;
+    
 
 ldpid.stop();
 hpid.stop();
