@@ -15,6 +15,8 @@ double lpower = 0;
 double rpower = 0;
 double driveDist = 0;
 
+double temprot = 0;
+
 double prevL = 0;
 double prevR = 0;
 double curDeg = 0;

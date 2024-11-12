@@ -75,8 +75,7 @@ void reset(){
   curDeg=0;
 }
 void dreset(){
-  lquad.resetRotation();
-  rquad.resetRotation();
+  temprot = lquad.position(degrees);
   driveDist=0;
 
 }
@@ -107,12 +106,27 @@ double radtodegrees(double val){
   return val*180/PI;
 }
 
+int odometry(){
+  //very rudimentary, just degree tracking right now
+  while(true){
+    curDeg += ((lquad.position(degrees)-prevL) - (rquad.position(degrees)-prevR)) / (lWheelDist + rWheelDist);
+    prevL = lquad.position(degrees);
+    prevR = rquad.position(degrees);
 
+    sticks.Screen.clearLine(6);
+    sticks.Screen.setCursor(6,0);
+    sticks.Screen.print(curdeg);
+    
+
+    task::sleep(10);
+  }
+  return 1;
+}
 
 int headingPID() {
   while(enableTurnPID) {
     // Heading correction logic
-    double headingError = (whee.rotation(degrees))-targetDeg;
+    double headingError = (curDeg)-targetDeg;
         
     // Basic PID for heading correction
     turnTotalError += headingError;
@@ -132,11 +146,6 @@ int headingPID() {
     leftMotor.spin(forward,(lpower - turnPower), voltageUnits::volt);
     rightMotor.spin(forward, (lpower + turnPower), voltageUnits::volt);
     
-    sticks.Screen.clearScreen();
-    sticks.Screen.print(whee.rotation(degrees));
-    sticks.Screen.print("\n");
-    sticks.Screen.print(lquad.position(degrees));
-    sticks.Screen.setCursor(0,0);
     
     task::sleep(5);
   }
@@ -149,7 +158,7 @@ int ldrivePID(){
       task::sleep(20);
       continue;
     }
-    double lPos = -lquad.position(degrees);
+    double lPos = temprot-lquad.position(degrees);
     
     lerror = lPos-inchtodegrees(driveDist);
 
@@ -182,15 +191,11 @@ void autonomous(void) {
   reset();
   dreset();
   curDeg=0;
-  whee.setHeading(20, degrees);
   
+  task odom(odometry);
   task ldpid(ldrivePID);
   task hpid(headingPID);
-  //11.5 forward
-  //-30
-  //forward
-  ///clamp
-    
+
     dreset();
     speed=10.0;
     driveDist=-11.5;
@@ -237,44 +242,6 @@ void autonomous(void) {
 
 ldpid.stop();
 hpid.stop();
-    /*
-    dreset();
-    driveDist=14;
-    wait(1,seconds);
-    targetDeg+=60;
-    wait(1,seconds);
-    
-    dreset();
-    driveDist=-40;
-    wait(3,seconds);*/
-    //TURN
-    /*
-    targetDeg+=45;
-    wait(2,seconds);
-    dreset();
-    driveDist=24;
-    wait(3,seconds);
-    enableDrivePID=true;*/
-/*
-  targetDeg=30;
-  wait(1,seconds);
-    // DRIVE FORWARD AND SCORE PRELOAD ONTO STAKE LEFT SIDE
-    
-    driveDist=-30;
-    wait(1.1, seconds);
-    clamp.set(true);
-    wait(.5,seconds);
-    wait(0.5,seconds);
-    intake.spin(reverse);
-    wait(2,seconds);
-    //TURN
-    targetDeg-=45;
-    dreset();
-    driveDist=24;
-    enableDrivePID=true;*/
-    
-
-
 }
 
 /*---------------------------------------------------------------------------*/
