@@ -85,9 +85,9 @@ void pre_auton(void) { // in da stripped club, straiht up jorkin' it. and  by it
   // Example: clearing encoders, setting servo positions, bathroom break etc.
   leftMotor.setStopping(coast);
   rightMotor.setStopping(coast);
-  arm.setStopping(hold);
-  arm.setMaxTorque(100, percent);
-  arm.setVelocity(100, percent);
+  //arm.setStopping(hold);
+  //arm.setMaxTorque(100, percent);
+  //arm.setVelocity(100, percent);
   intake.setVelocity(100, percent);
 
   
@@ -115,7 +115,7 @@ int odometry(){
 
     sticks.Screen.clearLine(6);
     sticks.Screen.setCursor(6,0);
-    sticks.Screen.print(curdeg);
+    sticks.Screen.print(curDeg);
     
 
     task::sleep(10);
