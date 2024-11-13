@@ -29,7 +29,6 @@ motor rm1(7, true);
 motor rm2(8, true);
 motor rm3(9, true);
 
-motor arm(3);
 digital_out armp1 = digital_out(Thinky.ThreeWirePort.A);
 digital_out armp2 = digital_out(Thinky.ThreeWirePort.C);
 
@@ -47,7 +46,8 @@ motor_group rightMotor(rm1, rm2, rm3);
 
 motor intake1(5,ratio18_1);
 motor intake2(6, ratio18_1, true);
-motor_group intake(intake1, intake2);
+motor intake3(3, ratio18_1, true);
+motor_group intake(intake1, intake2, intake3);
 
 
 digital_out clamp = digital_out(Thinky.ThreeWirePort.D);
@@ -254,7 +254,7 @@ void usercontrol(void) {
   reset();
   enableDrivePID = false;
   enableTurnPID=false;
-  arm.setPosition(0, turns);
+  //arm.setPosition(0, turns);
 
   turnImportance = 0.5;
 
@@ -284,7 +284,7 @@ void usercontrol(void) {
       intake.stop();
     }
 
-
+/*
     if (arm.position(degrees) < 700 && sticks.ButtonR1.pressing()){
       arm.spin(forward);
     }else if (armreset.pressing()){
@@ -295,6 +295,7 @@ void usercontrol(void) {
     }else{
       arm.stop();
     }
+  */
 
     //tlatch.check(sticks.ButtonA.pressing()); // transmission
     clatch.check(sticks.ButtonX.pressing()); // clamp
