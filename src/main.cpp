@@ -74,11 +74,7 @@ void reset(){
   whee.setHeading(0, degrees);
   curDeg=0;
 }
-void dreset(){
-  temprot = lquad.position(degrees);
-  driveDist=0;
 
-}
 
 void pre_auton(void) { // in da stripped club, straiht up jorkin' it. and  by it
   // All activities that occur before the competition starts
@@ -88,7 +84,7 @@ void pre_auton(void) { // in da stripped club, straiht up jorkin' it. and  by it
   //arm.setStopping(hold);
   //arm.setMaxTorque(100, percent);
   //arm.setVelocity(100, percent);
-  intake.setVelocity(100, percent);
+  intake.setVelocity(75, percent);
 
   
 }
@@ -106,16 +102,22 @@ double radtodegrees(double val){
   return val*180/PI;
 }
 
+void dreset(){
+  temprot = lquad.position(degrees);
+  driveDist=0;
+
+}
+
 int odometry(){
   //very rudimentary, just degree tracking right now
   while(true){
-    curDeg += ((lquad.position(degrees)-prevL) - (rquad.position(degrees)-prevR)) / (lWheelDist + rWheelDist);
-    prevL = lquad.position(degrees);
-    prevR = rquad.position(degrees);
+    curDeg += ((degreestorad(lquad.position(degrees))-prevL) - (prevR-degreestorad(rquad.position(degrees)))) / (lWheelDist + rWheelDist)* 2;
+    prevL = degreestorad(lquad.position(degrees));
+    prevR = degreestorad(rquad.position(degrees));
 
-    sticks.Screen.clearLine(6);
-    sticks.Screen.setCursor(6,0);
-    sticks.Screen.print(curDeg);
+    sticks.Screen.clearLine(4);
+    sticks.Screen.setCursor(4,0);
+    sticks.Screen.print(radtodegrees(curDeg));
     
 
     task::sleep(10);
@@ -126,7 +128,7 @@ int odometry(){
 int headingPID() {
   while(enableTurnPID) {
     // Heading correction logic
-    double headingError = (curDeg)-targetDeg;
+    double headingError = radtodegrees(curDeg)-targetDeg;
         
     // Basic PID for heading correction
     turnTotalError += headingError;
@@ -196,6 +198,7 @@ void autonomous(void) {
   task ldpid(ldrivePID);
   task hpid(headingPID);
 
+
     dreset();
     speed=10.0;
     driveDist=-11.5;
@@ -214,12 +217,12 @@ void autonomous(void) {
     intake.spin(reverse);
     wait(1,seconds);
     speed=10.0;
-    driveDist = 20;
+    driveDist = -20;
   
     wait(1,seconds);
     enableDrivePID=false;
     speed=5.0;
-    targetDeg = -90;
+    targetDeg = 90;
     wait(1,seconds);
     
     dreset();
@@ -230,13 +233,13 @@ void autonomous(void) {
     driveDist=18;
     wait(1,sec);
     enableDrivePID=false;
-    targetDeg=-180;
+    targetDeg=180;
     wait(.6,sec);
     dreset();
     enableDrivePID=true;
     driveDist=17;
     wait(2,sec);
-    driveDist=14;
+    driveDist=12;
    wait(1,sec);
     enableDrivePID=false;
 
@@ -253,6 +256,8 @@ hpid.stop();
 void usercontrol(void) {
   reset();
   enableDrivePID = false;
+    task odom(odometry);
+
   enableTurnPID=false;
   //arm.setPosition(0, turns);
 
