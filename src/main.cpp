@@ -66,36 +66,64 @@ double radtodegrees(double val){
   return val*180/PI;
 }
 
+// Assuming global variables are defined and initialized appropriately
+double globalPA = 90.0; // Initialized once globally
+double curDeg = 0.0;
+double xPos = 0.0;
+double yPos = 0.0;
+double prevL = 0.0;
+double prevR = 0.0;
+double prevS = 0.0;
+
 int odometry(){
-  //very rudimentary, just degree tracking right now
   while(true){
-    double deltaL = lquad.position(degrees)-prevL;
-    double deltaR = rquad.position(degrees)-prevR;
-    double deltaS = squad.position(degrees)-prevS;
+    double currentL = lquad.position(degrees);
+    double currentR = rquad.position(degrees);
+    double currentS = squad.position(degrees);
 
-    double deltaT = (deltaL - deltaR) / (lWheelDist + rWheelDist);
+    double deltaL = currentL - prevL;
+    double deltaR = currentR - prevR;
+    double deltaS = currentS - prevS;
 
-    curDeg += deltaT;
+    double deltaT = (deltaL - deltaR) / (lWheelDist + rWheelDist); 
 
     double tx = 2 * sin(degreestorad(deltaT)/2) * (deltaS/deltaT + sWheelDist);
     double ty = 2 * sin(degreestorad(deltaT)/2) * (deltaR/deltaT + rWheelDist);
 
-    prevL = lquad.position(degrees);
-    prevR = rquad.position(degrees);
-    prevS = squad.position(degrees);
+    double deltaPA = atan2(ty, tx); // Use atan2 for better quadrant handling
+    double newPA = curDeg + radtodegrees(deltaPA);
 
-    
+    double globDist = sqrt(pow(xPos, 2) + pow(yPos, 2));
+    double deltaDist = sqrt(pow(tx, 2) + pow(ty, 2));
 
+    double angleDiff = globalPA - newPA;
+    double actualGlobDist = sqrt(pow(globDist, 2) + pow(deltaDist, 2) + (2 * globDist * deltaDist * cos(degreestorad(angleDiff))));
+
+    curDeg += deltaT;
+
+    if ((globDist + (deltaDist * cos(degreestorad(angleDiff)))) >= 0){
+      globalPA = asin((deltaDist/actualGlobDist)*sin(degreestorad(angleDiff))); 
+    }
+    else {
+      globalPA = 180 - asin((deltaDist/actualGlobDist)*sin(degreestorad(angleDiff)));
+    }
+
+    ypos = actualGlobDist * sin(degreestorad(globalPA));
+    xpos = actualGlobDist * cos(degreestorad(globalPA));
+
+    prevL = currentL;
+    prevR = currentR;
+    prevS = currentS;
 
     sticks.Screen.clearLine(6);
     sticks.Screen.setCursor(6,0);
     sticks.Screen.print(curDeg);
-    
-
+  
     task::sleep(10);
   }
   return 1;
 }
+
 
 
 /*---------------------------------------------------------------------------*/
