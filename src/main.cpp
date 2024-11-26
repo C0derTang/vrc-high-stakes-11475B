@@ -84,9 +84,13 @@ int odometry(){
     double currentR = rquad.position(degrees);
     double currentS = squad.position(degrees);
 
-    double deltaL = degreestoinches(currentL - prevL);
-    double deltaR = degreestoinches(currentR - prevR);
-    double deltaS = degreestoinches(currentS - prevS);
+    double deltaL = degreestoinches(abs(currentL - prevL));
+    if (currentL<prevL) deltaL *= -1;
+    double deltaR = degreestoinches(abs(currentR - prevR));
+    if (currentR<prevR) deltaR *= -1;
+    double deltaS = degreestoinches(abs(currentS - prevS));
+    if (currentS<prevS) deltaS *= -1;
+
 
     double deltaT = (deltaL - deltaR) / (lWheelDist + rWheelDist);
 
@@ -177,7 +181,7 @@ void usercontrol(void) {
       else gr.off();
 
         
-    wait(10, msec); 
+    wait(5, msec); 
   }
 }
 
