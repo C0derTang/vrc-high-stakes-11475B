@@ -84,7 +84,7 @@ void pre_auton(void) { // in da stripped club, straiht up jorkin' it. and  by it
   //arm.setStopping(hold);
   //arm.setMaxTorque(100, percent);
   //arm.setVelocity(100, percent);
-  intake.setVelocity(75, percent);
+  intake.setVelocity(100, percent);
 
   
 }
@@ -197,6 +197,16 @@ void autonomous(void) {
   task odom(odometry);
   task ldpid(ldrivePID);
   task hpid(headingPID);
+
+  /*
+  Part 1:
+  drive forward
+  turn left 90
+  drive backward and clamp mogo
+  intake and spin
+  
+  
+  */
 
 
     dreset();
