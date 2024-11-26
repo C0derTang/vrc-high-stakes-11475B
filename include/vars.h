@@ -27,7 +27,7 @@ double yPos = 0;
 
 //constants
 const double PI = 3.14159265;
-const double wheelDiameter = 4.125;
-const double lWheelDist = 7.375;
-const double rWheelDist = 7.375;
-const double sWheelDist = 7.375;
+const double wheelDiameter = 2.75;
+const double lWheelDist = 3.25;
+const double rWheelDist =3.25;
+const double sWheelDist = 4.25;

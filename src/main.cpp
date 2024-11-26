@@ -22,15 +22,19 @@ competition Competition;
 // define your global instances of motors and other devices here
 brain Thinky;
 
-motor lm(0, false);
-motor rm1(5, true);
+motor lm(1, false);
+motor rm(8, true);
 
 
 controller sticks;
 
-encoder lquad = encoder(Thinky.ThreeWirePort.A);
-encoder rquad = encoder(Thinky.ThreeWirePort.B);
-encoder squad = encoder(Thinky.ThreeWirePort.C);
+encoder lquad = encoder(Thinky.ThreeWirePort.C);
+encoder rquad = encoder(Thinky.ThreeWirePort.A);
+encoder squad = encoder(Thinky.ThreeWirePort.E);
+
+led re = led(Thinky.ThreeWirePort.G);
+led gr = led(Thinky.ThreeWirePort.H);
+
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -41,7 +45,9 @@ encoder squad = encoder(Thinky.ThreeWirePort.C);
 void reset(){
   lquad.resetRotation();
   rquad.resetRotation();
-  bquad.resetRotation();
+  squad.resetRotation();
+  xPos=0;
+  yPos=0;
 }
 
 void pre_auton(void) {
@@ -59,6 +65,11 @@ double inchtodegrees(double val){
   double degrees = rotations*360;
   return degrees;
 }
+double degreestoinches(double val){
+  double rotations = val/360;
+  double inches = rotations*(wheelDiameter*PI);
+  return inches;
+}
 double degreestorad(double val){
   return val*PI/180;
 }
@@ -66,13 +77,6 @@ double radtodegrees(double val){
   return val*180/PI;
 }
 
-// Assuming global variables are defined and initialized appropriately
-double globalPA = 90.0; // Initialized once globally
-double curDeg = 0.0;
-
-double prevL = 0.0;
-double prevR = 0.0;
-double prevS = 0.0;
 
 int odometry(){
   while(true){
@@ -80,44 +84,52 @@ int odometry(){
     double currentR = rquad.position(degrees);
     double currentS = squad.position(degrees);
 
-    double deltaL = currentL - prevL;
-    double deltaR = currentR - prevR;
-    double deltaS = currentS - prevS;
+    double deltaL = degreestoinches(currentL - prevL);
+    double deltaR = degreestoinches(currentR - prevR);
+    double deltaS = degreestoinches(currentS - prevS);
 
-    double deltaT = (deltaL - deltaR) / (lWheelDist + rWheelDist); 
+    double deltaT = (deltaL - deltaR) / (lWheelDist + rWheelDist);
 
-    double tx = 2 * sin(degreestorad(deltaT)/2) * (deltaS/deltaT + sWheelDist);
-    double ty = 2 * sin(degreestorad(deltaT)/2) * (deltaR/deltaT + rWheelDist);
+    double tx = 0, ty = 0;
+    if (deltaT == 0){
+      tx = deltaS;
+       ty = deltaR;
+    }else{
+      tx = 2 * sin(deltaT)/2 * (deltaS/(deltaT) + sWheelDist);
+      ty = 2 * sin(deltaT)/2 * (deltaR/(deltaT) + rWheelDist);
+    }
 
-    double deltaPA = atan2(ty, tx); // Use atan2 for better quadrant handling
-    double newPA = curDeg + radtodegrees(deltaPA);
+    double r = sqrt(tx*tx + ty*ty);
+    double angleA = atan2(ty, tx);
+    double angleB = -(curDeg+deltaT/2);
 
-    double globDist = sqrt(pow(xPos, 2) + pow(yPos, 2));
-    double deltaDist = sqrt(pow(tx, 2) + pow(ty, 2));
+    double deltaX = r*cos(angleA+angleB);
+    double deltaY = r*sin(angleA+angleB);
 
-    double angleDiff = globalPA - newPA;
-    double actualGlobDist = sqrt(pow(globDist, 2) + pow(deltaDist, 2) + (2 * globDist * deltaDist * cos(degreestorad(angleDiff))));
-
+    xPos += deltaX;
+    yPos += deltaY;
     curDeg += deltaT;
-
-    if ((globDist + (deltaDist * cos(degreestorad(angleDiff)))) >= 0){
-      globalPA = asin((deltaDist/actualGlobDist)*sin(degreestorad(angleDiff))); 
-    }
-    else {
-      globalPA = 180 - asin((deltaDist/actualGlobDist)*sin(degreestorad(angleDiff)));
-    }
-
-    yPos = actualGlobDist * sin(degreestorad(globalPA));
-    xPos = actualGlobDist * cos(degreestorad(globalPA));
+    if(curDeg < 0) curDeg += 2*PI;
+    curDeg = fmod(fmod(curDeg,2*PI) + 2*PI, 2*PI);
 
     prevL = currentL;
     prevR = currentR;
     prevS = currentS;
 
-    sticks.Screen.clearLine(6);
-    sticks.Screen.setCursor(6,0);
-    sticks.Screen.print(xPos, yPos)
-    sticks.Screen.print(curDeg);
+    sticks.Screen.clearLine(1);
+    sticks.Screen.setCursor(1,0);
+    sticks.Screen.print("X position: ");
+    sticks.Screen.print(xPos);
+    
+    sticks.Screen.clearLine(2);
+    sticks.Screen.setCursor(2,0);
+    sticks.Screen.print("Y position: ");
+    sticks.Screen.print(yPos);
+
+     sticks.Screen.clearLine(3);
+    sticks.Screen.setCursor(3,0);
+    sticks.Screen.print("Current heading: ");
+    sticks.Screen.print(radtodegrees(curDeg));
   
     task::sleep(10);
   }
@@ -143,7 +155,10 @@ void autonomous(void) {
 /*---------------------------------------------------------------------------*/
 
 void usercontrol(void) {
+  
   reset();
+  sticks.Screen.clearScreen();
+  task odom(odometry);
 
   while (true) {
     double turnVal = sticks.Axis1.position(percent);
@@ -154,6 +169,12 @@ void usercontrol(void) {
 
       lm.spin(forward, fwdVolts + turnVolts, voltageUnits::volt);
       rm.spin(forward, fwdVolts - turnVolts, voltageUnits::volt);
+
+      if (xPos*xPos + yPos+yPos < 9) re.on();
+      else re.off();
+
+      if (radtodegrees(curDeg) < 3 || radtodegrees(curDeg) > 357) gr.on();
+      else gr.off();
 
         
     wait(10, msec); 
