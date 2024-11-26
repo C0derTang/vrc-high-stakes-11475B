@@ -69,8 +69,7 @@ double radtodegrees(double val){
 // Assuming global variables are defined and initialized appropriately
 double globalPA = 90.0; // Initialized once globally
 double curDeg = 0.0;
-double xPos = 0.0;
-double yPos = 0.0;
+
 double prevL = 0.0;
 double prevR = 0.0;
 double prevS = 0.0;
@@ -108,8 +107,8 @@ int odometry(){
       globalPA = 180 - asin((deltaDist/actualGlobDist)*sin(degreestorad(angleDiff)));
     }
 
-    ypos = actualGlobDist * sin(degreestorad(globalPA));
-    xpos = actualGlobDist * cos(degreestorad(globalPA));
+    yPos = actualGlobDist * sin(degreestorad(globalPA));
+    xPos = actualGlobDist * cos(degreestorad(globalPA));
 
     prevL = currentL;
     prevR = currentR;
@@ -117,6 +116,7 @@ int odometry(){
 
     sticks.Screen.clearLine(6);
     sticks.Screen.setCursor(6,0);
+    sticks.Screen.print(xPos, yPos)
     sticks.Screen.print(curDeg);
   
     task::sleep(10);
