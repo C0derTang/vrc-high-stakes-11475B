@@ -91,7 +91,7 @@ int odometry(){
     double deltaS = degreestoinches(abs(currentS - prevS));
     if (currentS<prevS) deltaS *= -1;
 
-
+    
     double deltaT = (deltaL - deltaR) / (lWheelDist + rWheelDist);
 
     double tx = 0, ty = 0;
@@ -179,6 +179,8 @@ void usercontrol(void) {
 
       if (radtodegrees(curDeg) < 3 || radtodegrees(curDeg) > 357) gr.on();
       else gr.off();
+
+
 
         
     wait(5, msec); 
