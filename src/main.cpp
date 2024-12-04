@@ -54,7 +54,7 @@ digital_out clamp = digital_out(Thinky.ThreeWirePort.D);
 
 controller sticks;
 
-encoder lquad = encoder(Thinky.ThreeWirePort.C);
+encoder lquad = encoder(Thinky.ThreeWirePort.G);
 encoder rquad = encoder(Thinky.ThreeWirePort.E);
 //encoder bquad = encoder(Thinky.ThreeWirePort.C);
 
@@ -115,6 +115,9 @@ int odometry(){
     prevL = degreestorad(lquad.position(degrees));
     prevR = degreestorad(rquad.position(degrees));
 
+    sticks.Screen.clearLine(4);
+    sticks.Screen.setCursor(4,0);
+    sticks.Screen.print(radtodegrees(curDeg));
     
 
     task::sleep(10);
@@ -191,7 +194,7 @@ void autonomous(void) {
   dreset();
   curDeg=0;
   
- // task odom(odometry);
+  task odom(odometry);
   task ldpid(ldrivePID);
   task hpid(headingPID);
 
