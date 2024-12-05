@@ -1,6 +1,10 @@
 //hi
 
-//PID variable tuning (will take fucking forever)
+//odometry frame:
+double xPos=0;
+double yPos=0;
+
+//PID variable tuning 
 //straight tuning
 double kP = 0.03;
 double kI = 0.00001;
