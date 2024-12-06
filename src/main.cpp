@@ -84,7 +84,7 @@ void pre_auton(void) { // in da stripped club, straiht up jorkin' it. and  by it
   //arm.setStopping(hold);
   //arm.setMaxTorque(100, percent);
   //arm.setVelocity(100, percent);
-  intake.setVelocity(100, percent);
+  intake.setVelocity(85, percent);
 
   
 }
@@ -109,61 +109,21 @@ void dreset(){
 }
 
 int odometry(){
+  //very rudimentary, just degree tracking right now
   while(true){
-    double currentL = lquad.position(degrees);
-    double currentR = rquad.position(degrees);
+    curDeg += ((degreestorad(lquad.position(degrees))-prevL) - (prevR-degreestorad(rquad.position(degrees)))) / (lWheelDist + rWheelDist)* 2;
+    prevL = degreestorad(lquad.position(degrees));
+    prevR = degreestorad(rquad.position(degrees));
 
-    double deltaL = degreestoinches(abs(currentL - prevL));
-    if (currentL<prevL) deltaL *= -1;
-    double deltaR = degreestoinches(abs(currentR - prevR));
-    if (currentR<prevR) deltaR *= -1;
-
-    
-    double deltaT = (deltaL - deltaR) / (lWheelDist + rWheelDist);
-
-    double tx = 0, ty = 0;
-    if (deltaT == 0){
-       ty = deltaR;
-    }else{
-      ty = 2 * sin(deltaT)/2 * (deltaR/(deltaT) + rWheelDist);
-    }
-
-    double r = sqrt(tx*tx + ty*ty);
-    double angleA = atan2(ty, tx);
-    double angleB = -(curDeg+deltaT/2);
-
-    double deltaX = r*cos(angleA+angleB);
-    double deltaY = r*sin(angleA+angleB);
-
-    xPos += deltaX;
-    yPos += deltaY;
-    curDeg += deltaT;
-    if(curDeg < 0) curDeg += 2*PI;
-    curDeg = fmod(fmod(curDeg,2*PI) + 2*PI, 2*PI);
-
-    prevL = currentL;
-    prevR = currentR;
-
-    sticks.Screen.clearLine(1);
-    sticks.Screen.setCursor(1,0);
-    sticks.Screen.print("X position: ");
-    sticks.Screen.print(xPos);
-    
-    sticks.Screen.clearLine(2);
-    sticks.Screen.setCursor(2,0);
-    sticks.Screen.print("Y position: ");
-    sticks.Screen.print(yPos);
-
-     sticks.Screen.clearLine(3);
-    sticks.Screen.setCursor(3,0);
-    sticks.Screen.print("Current heading: ");
+    sticks.Screen.clearLine(4);
+    sticks.Screen.setCursor(4,0);
     sticks.Screen.print(radtodegrees(curDeg));
-  
+    
+
     task::sleep(10);
   }
   return 1;
 }
-
 
 int headingPID() {
   while(enableTurnPID) {
@@ -279,7 +239,21 @@ void autonomous(void) {
     enableDrivePID=true;
     speed=5.0;
     driveDist = 30;
-    wait(1.5,seconds);
+    wait(2.5,seconds);
+    driveDist=0;
+    wait(2.5,sec);
+    enableDrivePID=false;
+    targetDeg=45;
+    wait(.3,sec);
+    dreset();
+    enableDrivePID=true;
+    intake.stop();
+    //16 for front left
+    driveDist=-12;
+    wait(5,sec);
+
+
+    /* far side codes
     driveDist=18;
     wait(1,sec);
     enableDrivePID=false;
@@ -289,9 +263,9 @@ void autonomous(void) {
     enableDrivePID=true;
     driveDist=17;
     wait(2,sec);
-    driveDist=12;
+    driveDist=10;
    wait(1,sec);
-    enableDrivePID=false;
+    enableDrivePID=false;*/
 
 ldpid.stop();
 hpid.stop();
