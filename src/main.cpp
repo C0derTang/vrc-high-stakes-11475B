@@ -22,12 +22,12 @@ competition Competition;
 // define your global instances of motors and other devices here
 brain Thinky;
 
-motor lm1(1, false);
-motor lm2(2, false);
-motor lm3(0, false);
-motor rm1(7, true);
-motor rm2(8, true);
-motor rm3(9, true);
+motor lm1(1,ratio6_1, false);
+motor lm2(2,ratio6_1, true);
+motor lm3(0,ratio6_1, false);
+motor rm1(7,ratio6_1, true);
+motor rm2(8,ratio6_1, true);
+motor rm3(9,ratio6_1, false);
 
 digital_out armp1 = digital_out(Thinky.ThreeWirePort.A);
 digital_out armp2 = digital_out(Thinky.ThreeWirePort.C);
@@ -37,17 +37,16 @@ inertial whee(10);
 
 limit  armreset  = limit(Thinky.ThreeWirePort.B);
 
-
+//meow
 motor_group leftMotor1(lm1,lm2);
 motor_group rightMotor1(rm1,rm2);
 
 motor_group leftMotor(lm1, lm2, lm3);
 motor_group rightMotor(rm1, rm2, rm3);
 
-motor intake1(5,ratio18_1);
-motor intake2(6, ratio18_1, true);
-motor intake3(3, ratio18_1, true);
-motor_group intake(intake1, intake2, intake3);
+motor intake1(4,ratio6_1);
+motor intake2(5, ratio6_1, false);
+motor_group intake(intake1, intake2);
 
 
 digital_out clamp = digital_out(Thinky.ThreeWirePort.D);
@@ -81,10 +80,11 @@ void pre_auton(void) { // in da stripped club, straiht up jorkin' it. and  by it
   // Example: clearing encoders, setting servo positions, bathroom break etc.
   leftMotor.setStopping(coast);
   rightMotor.setStopping(coast);
+  intake1.setVelocity(66, percent);
   //arm.setStopping(hold);
   //arm.setMaxTorque(100, percent);
   //arm.setVelocity(100, percent);
-  intake.setVelocity(85, percent);
+  intake.setVelocity(100, percent);
 
   
 }
@@ -209,12 +209,12 @@ void autonomous(void) {
   */
 
 
-    dreset();
+     dreset();
     speed=10.0;
     driveDist=-11.5;
     wait(1, seconds);
     enableDrivePID=false;
-    targetDeg=-30;
+    targetDeg=30;
     wait(.8,seconds);
     dreset();
     enableDrivePID=true;
@@ -232,7 +232,7 @@ void autonomous(void) {
     wait(1,seconds);
     enableDrivePID=false;
     speed=5.0;
-    targetDeg = 90;
+    targetDeg = -90;
     wait(1,seconds);
     
     dreset();
@@ -243,29 +243,13 @@ void autonomous(void) {
     driveDist=0;
     wait(2.5,sec);
     enableDrivePID=false;
-    targetDeg=45;
+    targetDeg=-45;
     wait(.3,sec);
     dreset();
     enableDrivePID=true;
     intake.stop();
     //16 for front left
     driveDist=-12;
-    wait(5,sec);
-
-
-    /* far side codes
-    driveDist=18;
-    wait(1,sec);
-    enableDrivePID=false;
-    targetDeg=180;
-    wait(.6,sec);
-    dreset();
-    enableDrivePID=true;
-    driveDist=17;
-    wait(2,sec);
-    driveDist=10;
-   wait(1,sec);
-    enableDrivePID=false;*/
 
 ldpid.stop();
 hpid.stop();
@@ -286,6 +270,8 @@ void usercontrol(void) {
   //arm.setPosition(0, turns);
 
   turnImportance = 0.5;
+
+  intake1.setVelocity(66, percent);
 
   while (noBitches) {
     double turnVal = sticks.Axis1.position(percent);
