@@ -1,17 +1,3 @@
-//PID variable tuning
-//straight tuning
-double kP = 0.03;
-double kI = 0.00001;
-double kD = 0.05;
-//turn
-double tkP = .15;
-double tkI = 0.000005;
-double tkD =0.05;
-
-// Autonomous settings
-double lateralPower = 0;
-double turnPower = 0;
-
 double prevL = 0;
 double prevR = 0;
 double prevB = 0;
