@@ -9,14 +9,13 @@ double tkI = 0.000005;
 double tkD =0.05;
 
 // Autonomous settings
-double lpower = 0;
-double rpower = 0;
-double driveDist = 0;
+double lateralPower = 0;
+double turnPower = 0;
 
 double prevL = 0;
 double prevR = 0;
 double prevB = 0;
-double curDeg = 0;
+double globalHeading = 0;
 
 double turnImportance = 0.5;
 
@@ -59,7 +58,7 @@ struct PID{
     PID(double p_, double i_, double d_) : kP(p_), kI(i_), kD(d_) {}
 
     double update(double current, double target){
-        double error = current-target;
+        double error = target-current;
 
         cumulativeError += error;
         if(abs(error) < .01 || abs(error) > 20) cumulativeError = 0;

@@ -63,46 +63,36 @@ void reset(){
   globalY=0;
 }
 
-void pre_auton(void) {
-  leftDrive.setStopping(coast);
-  rightDrive.setStopping(coast);
-
-  intake.setStopping(coast);
-  firstStageIntake.setVelocity(100, percent);
-  secondStageIntake.setVelocity(66, percent);
-  
-}
-
 // Unit Conversions
-double inchtodegrees(double val){
+double inchToDeg(double val){
   double rotations = val/(wheelDiameter*PI);
   double degrees = rotations*360;
   return degrees;
 }
-double degreestoinches(double val){
+double degToInch(double val){
   double rotations = val/360;
   double inches = rotations*(wheelDiameter*PI);
   return inches;
 }
-double degreestorad(double val){
+double degToRad(double val){
   return val*PI/180;
 }
-double radtodegrees(double val){
+double radToDeg(double val){
   return val*180/PI;
 }
 
-
+// odometry thread
 int odometry(){
   while(true){
     double currentL = leftEncoder.position(degrees);
     double currentR = rightEncoder.position(degrees);
     double currentB = backEncoder.position(degrees);
 
-    double deltaL = degreestoinches(abs(currentL - prevL));
+    double deltaL = degToInch(abs(currentL - prevL));
     if (currentL<prevL) deltaL *= -1;
-    double deltaR = degreestoinches(abs(currentR - prevR));
+    double deltaR = degToInch(abs(currentR - prevR));
     if (currentR<prevR) deltaR *= -1;
-    double deltaB = degreestoinches(abs(currentB - prevB));
+    double deltaB = degToInch(abs(currentB - prevB));
     if (currentB<prevB) deltaB *= -1;
 
     double deltaT = (deltaL - deltaR) / (leftWheelDist + rightWheelDist);
@@ -118,16 +108,16 @@ int odometry(){
 
     double r = sqrt(tx*tx + ty*ty);
     double angleA = atan2(ty, tx);
-    double angleB = -(curDeg+deltaT/2);
+    double angleB = -(globalHeading+deltaT/2);
 
     double deltaX = r*cos(angleA+angleB);
     double deltaY = r*sin(angleA+angleB);
 
     globalX += deltaX;
     globalY += deltaY;
-    curDeg += deltaT;
-    if(curDeg < 0) curDeg += 2*PI;
-    curDeg = fmod(fmod(curDeg,2*PI) + 2*PI, 2*PI);
+    globalHeading += deltaT;
+    if(globalHeading < 0) globalHeading += 2*PI;
+    globalHeading = fmod(fmod(globalHeading,2*PI) + 2*PI, 2*PI);
 
     prevL = currentL;
     prevR = currentR;
@@ -146,13 +136,88 @@ int odometry(){
      sticks.Screen.clearLine(3);
     sticks.Screen.setCursor(3,0);
     sticks.Screen.print("Current heading: ");
-    sticks.Screen.print(radtodegrees(curDeg));
+    sticks.Screen.print(radToDeg(globalHeading));
   
     task::sleep(5);
   }
   return 1;
 }
 
+// drive functions
+void pointTowardPoint(double targetX, double targetY, bool reverseFacing) {
+  double deltaX = targetX - globalX;
+  double deltaY = targetY - globalY;
+
+  double desiredHeading = atan2(deltaY, deltaX);
+
+  if (reverseFacing) {
+    desiredHeading += PI;
+    desiredHeading = fmod(desiredHeading + 2 * PI, 2 * PI); // Normalize to 0-2PI
+  }
+
+  double turnError = desiredHeading - globalHeading;
+
+  if (turnError > PI) {
+    turnError -= 2 * PI;
+  } else if (turnError < -PI) {
+    turnError += 2 * PI;
+  }
+
+  while (abs(turnError) > degToRad(1)) {
+    double turnPower = headingPID.update(globalHeading, desiredHeading);
+
+    if (turnError > 0) {
+      leftDrive.spin(forward, -turnPower, voltageUnits::volt);
+      rightDrive.spin(forward, turnPower, voltageUnits::volt);
+    } else {
+      leftDrive.spin(forward, turnPower, voltageUnits::volt);
+      rightDrive.spin(forward, -turnPower, voltageUnits::volt);
+    }
+
+    turnError = desiredHeading - globalHeading;
+    if (turnError > PI) {
+      turnError -= 2 * PI;
+    } else if (turnError < -PI) {
+      turnError += 2 * PI;
+    }
+
+    task::sleep(10);
+  }
+
+  leftDrive.stop();
+  rightDrive.stop();
+}
+
+void driveToPoint(double targetX, double targetY, bool reverseFacing) {
+  pointTowardPoint(targetX, targetY, reverseFacing);
+
+  double deltaX = targetX - globalX;
+  double deltaY = targetY - globalY;
+  double distance = sqrt(deltaX * deltaX + deltaY * deltaY);
+
+  while (distance > 0.5) { // Stop when within 0.5 inches of the target
+    double currentX = globalX;
+    double currentY = globalY;
+
+    deltaX = targetX - currentX;
+    deltaY = targetY - currentY;
+    distance = sqrt(deltaX * deltaX + deltaY * deltaY);
+
+    double drivePower = lateralPID.update(0, distance);
+
+    if (reverseFacing) {
+      drivePower *= -1;
+    }
+
+    leftDrive.spin(forward, drivePower, voltageUnits::volt);
+    rightDrive.spin(forward, drivePower, voltageUnits::volt);
+
+    task::sleep(10);
+  }
+
+  leftDrive.stop();
+  rightDrive.stop();
+}
 
 
 /*---------------------------------------------------------------------------*/
@@ -160,6 +225,17 @@ int odometry(){
 /*                              Autonomous Task                              */
 /*                                                                           */
 /*---------------------------------------------------------------------------*/
+
+void pre_auton(void) {
+  leftDrive.setStopping(coast);
+  rightDrive.setStopping(coast);
+  intake.setStopping(coast);
+  armMotor.setStopping(hold);
+
+  firstStageIntake.setVelocity(100, percent);
+  secondStageIntake.setVelocity(66, percent);
+  
+}
 
 void autonomous(void) {
   
@@ -180,14 +256,23 @@ void usercontrol(void) {
   while (true) {
     double turnVal = sticks.Axis1.position(percent);
     double fwdVal = sticks.Axis3.position(percent);
-    // volts gives more power, apparently
+
     double turnVolts = turnVal * 0.12;
     double fwdVolts = fwdVal * 0.12 * (1-(abs(turnVolts/12.0)) * turnImportance);
 
-      leftDrive.spin(forward, fwdVolts + turnVolts, voltageUnits::volt);
-      rightDrive.spin(forward, fwdVolts - turnVolts, voltageUnits::volt);
+    leftDrive.spin(forward, fwdVolts + turnVolts, voltageUnits::volt);
+    rightDrive.spin(forward, fwdVolts - turnVolts, voltageUnits::volt);
 
+    if (sticks.ButtonL1.pressing()) intake.spin(forward);
+    else if (sticks.ButtonL2.pressing()) intake.spin(reverse);
+    else intake.stop();
 
+    if (sticks.ButtonR1.pressing()) armMotor.spin(forward);
+    else if (sticks.ButtonR2.pressing()) armMotor.spin(reverse);
+    else armMotor.stop();
+
+    clampLatch.check(sticks.ButtonX.pressing());
+    clamp.set(clampLatch.state);
         
     wait(5, msec); 
   }
