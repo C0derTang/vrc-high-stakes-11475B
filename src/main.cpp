@@ -163,9 +163,10 @@ void pointTowardPoint(double targetX, double targetY, bool reverseFacing) {
     turnError += 2 * PI;
   }
 
-  while (abs(turnError) > degToRad(1)) {
+  while (abs(turnError) > degToRad(1)) { // Stop turning when within 1 degree of target
     double turnPower = headingPID.update(globalHeading, desiredHeading);
 
+    // Determine the optimal turn direction
     if (turnError > 0) {
       leftDrive.spin(forward, -turnPower, voltageUnits::volt);
       rightDrive.spin(forward, turnPower, voltageUnits::volt);
@@ -202,15 +203,24 @@ void driveToPoint(double targetX, double targetY, bool reverseFacing) {
     deltaX = targetX - currentX;
     deltaY = targetY - currentY;
     distance = sqrt(deltaX * deltaX + deltaY * deltaY);
+    double desiredHeading = atan2(deltaY, deltaX);
 
+    double turnError = desiredHeading - globalHeading;
+    if (turnError > PI) {
+      turnError -= 2 * PI;
+    } else if (turnError < -PI) {
+      turnError += 2 * PI;
+    }
+
+    double turnPower = headingPID.update(globalHeading, desiredHeading);
     double drivePower = lateralPID.update(0, distance);
 
     if (reverseFacing) {
       drivePower *= -1;
     }
 
-    leftDrive.spin(forward, drivePower, voltageUnits::volt);
-    rightDrive.spin(forward, drivePower, voltageUnits::volt);
+    leftDrive.spin(forward, drivePower - turnPower, voltageUnits::volt);
+    rightDrive.spin(forward, drivePower + turnPower, voltageUnits::volt);
 
     task::sleep(10);
   }
@@ -218,6 +228,7 @@ void driveToPoint(double targetX, double targetY, bool reverseFacing) {
   leftDrive.stop();
   rightDrive.stop();
 }
+
 
 
 /*---------------------------------------------------------------------------*/
