@@ -74,3 +74,10 @@ struct PID{
         return power;
     }
 };
+
+
+Toggle clampLatch;
+
+PID lateralPID(0,0,0);
+PID headingPID(0,0,0);
+PID armPID(0,0,0);

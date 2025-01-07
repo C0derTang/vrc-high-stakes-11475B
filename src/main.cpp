@@ -34,7 +34,7 @@ motor secondStageIntake = motor(PORT6, ratio6_1);
 
 motor_group intake = motor_group(firstStageIntake, secondStageIntake);
 
-motor armMotor = motor(PORT5, ratio18_1); // not fs
+motor armMotor = motor(PORT5, ratio18_1); // not fs port
 
 
 triport expander = triport(PORT11);
@@ -46,6 +46,8 @@ encoder backEncoder = encoder(expander.C);
 encoder armEncoder = encoder(noggin.ThreeWirePort.A);
 
 digital_out clamp = digital_out(noggin.ThreeWirePort.C);
+
+
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -160,9 +162,7 @@ int odometry(){
 /*---------------------------------------------------------------------------*/
 
 void autonomous(void) {
-  PID lateralPID(0,0,0);
-  PID headingPID(0,0,0);
-  PID armPID(0,0,0);
+  
 }
 
 /*---------------------------------------------------------------------------*/
