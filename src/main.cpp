@@ -16,21 +16,36 @@ using namespace std;
 
 competition Competition;
 
-brain Thinky;
+brain noggin;
+controller sticks = controller(primary);
 
-motor lm(1, false);
-motor rm(8, true);
+motor frontLeftMotor = motor(PORT1, ratio6_1, false);
+motor middleLeftMotor = motor(PORT2, ratio6_1, false);
+motor backLeftMotor = motor(PORT3, ratio6_1, false);
+motor frontRightMotor = motor(PORT8, ratio6_1, true);
+motor middleRightMotor = motor(PORT9, ratio6_1, true);
+motor backRightMotor = motor(PORT10, ratio6_1, true);
+
+motor_group leftDrive = motor_group(frontLeftMotor, middleLeftMotor, backLeftMotor);
+motor_group rightDrive = motor_group(frontRightMotor, middleRightMotor, backRightMotor);
+
+motor firstStageIntake = motor(PORT5, ratio6_1);
+motor secondStageIntake = motor(PORT6, ratio6_1);
+
+motor_group intake = motor_group(firstStageIntake, secondStageIntake);
+
+motor armMotor = motor(PORT5, ratio18_1); // not fs
 
 
-controller sticks;
+triport expander = triport(PORT11);
 
-encoder lquad = encoder(Thinky.ThreeWirePort.C);
-encoder rquad = encoder(Thinky.ThreeWirePort.A);
-encoder squad = encoder(Thinky.ThreeWirePort.E);
+encoder leftEncoder = encoder(expander.A);
+encoder rightEncoder = encoder(expander.E);
+encoder backEncoder = encoder(expander.C);
 
-led re = led(Thinky.ThreeWirePort.G);
-led gr = led(Thinky.ThreeWirePort.H);
+encoder armEncoder = encoder(noggin.ThreeWirePort.A);
 
+digital_out clamp = digital_out(noggin.ThreeWirePort.C);
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -39,19 +54,20 @@ led gr = led(Thinky.ThreeWirePort.H);
 /*---------------------------------------------------------------------------*/
 
 void reset(){
-  lquad.resetRotation();
-  rquad.resetRotation();
-  squad.resetRotation();
-  xPos=0;
-  yPos=0;
+  leftEncoder.resetRotation();
+  rightEncoder.resetRotation();
+  backEncoder.resetRotation();
+  globalX=0;
+  globalY=0;
 }
 
 void pre_auton(void) {
-  // All activities that occur before the competition starts
-  // Example: clearing encoders, setting servo positions, bathroom break etc.
-  lm.setStopping(coast);
-  rm.setStopping(coast);
+  leftDrive.setStopping(coast);
+  rightDrive.setStopping(coast);
 
+  intake.setStopping(coast);
+  firstStageIntake.setVelocity(100, percent);
+  secondStageIntake.setVelocity(66, percent);
   
 }
 
@@ -76,27 +92,26 @@ double radtodegrees(double val){
 
 int odometry(){
   while(true){
-    double currentL = lquad.position(degrees);
-    double currentR = rquad.position(degrees);
-    double currentS = squad.position(degrees);
+    double currentL = leftEncoder.position(degrees);
+    double currentR = rightEncoder.position(degrees);
+    double currentB = backEncoder.position(degrees);
 
     double deltaL = degreestoinches(abs(currentL - prevL));
     if (currentL<prevL) deltaL *= -1;
     double deltaR = degreestoinches(abs(currentR - prevR));
     if (currentR<prevR) deltaR *= -1;
-    double deltaS = degreestoinches(abs(currentS - prevS));
-    if (currentS<prevS) deltaS *= -1;
+    double deltaB = degreestoinches(abs(currentB - prevB));
+    if (currentB<prevB) deltaB *= -1;
 
-    
-    double deltaT = (deltaL - deltaR) / (lWheelDist + rWheelDist);
+    double deltaT = (deltaL - deltaR) / (leftWheelDist + rightWheelDist);
 
     double tx = 0, ty = 0;
     if (deltaT == 0){
-      tx = deltaS;
+      tx = deltaB;
        ty = deltaR;
     }else{
-      tx = 2 * sin(deltaT)/2 * (deltaS/(deltaT) + sWheelDist);
-      ty = 2 * sin(deltaT)/2 * (deltaR/(deltaT) + rWheelDist);
+      tx = 2 * sin(deltaT)/2 * (deltaB/(deltaT) + backWheelDist);
+      ty = 2 * sin(deltaT)/2 * (deltaR/(deltaT) + rightWheelDist);
     }
 
     double r = sqrt(tx*tx + ty*ty);
@@ -106,32 +121,32 @@ int odometry(){
     double deltaX = r*cos(angleA+angleB);
     double deltaY = r*sin(angleA+angleB);
 
-    xPos += deltaX;
-    yPos += deltaY;
+    globalX += deltaX;
+    globalY += deltaY;
     curDeg += deltaT;
     if(curDeg < 0) curDeg += 2*PI;
     curDeg = fmod(fmod(curDeg,2*PI) + 2*PI, 2*PI);
 
     prevL = currentL;
     prevR = currentR;
-    prevS = currentS;
+    prevB = currentB;
 
     sticks.Screen.clearLine(1);
     sticks.Screen.setCursor(1,0);
     sticks.Screen.print("X position: ");
-    sticks.Screen.print(xPos);
+    sticks.Screen.print(globalX);
     
     sticks.Screen.clearLine(2);
     sticks.Screen.setCursor(2,0);
     sticks.Screen.print("Y position: ");
-    sticks.Screen.print(yPos);
+    sticks.Screen.print(globalY);
 
      sticks.Screen.clearLine(3);
     sticks.Screen.setCursor(3,0);
     sticks.Screen.print("Current heading: ");
     sticks.Screen.print(radtodegrees(curDeg));
   
-    task::sleep(10);
+    task::sleep(5);
   }
   return 1;
 }
@@ -145,7 +160,9 @@ int odometry(){
 /*---------------------------------------------------------------------------*/
 
 void autonomous(void) {
-  
+  PID lateralPID(0,0,0);
+  PID headingPID(0,0,0);
+  PID armPID(0,0,0);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -167,15 +184,8 @@ void usercontrol(void) {
     double turnVolts = turnVal * 0.12;
     double fwdVolts = fwdVal * 0.12 * (1-(abs(turnVolts/12.0)) * turnImportance);
 
-      lm.spin(forward, fwdVolts + turnVolts, voltageUnits::volt);
-      rm.spin(forward, fwdVolts - turnVolts, voltageUnits::volt);
-
-      if (xPos*xPos + yPos+yPos < 9) re.on();
-      else re.off();
-
-      if (radtodegrees(curDeg) < 3 || radtodegrees(curDeg) > 357) gr.on();
-      else gr.off();
-
+      leftDrive.spin(forward, fwdVolts + turnVolts, voltageUnits::volt);
+      rightDrive.spin(forward, fwdVolts - turnVolts, voltageUnits::volt);
 
 
         
