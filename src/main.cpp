@@ -182,7 +182,7 @@ void pointTowardPoint(double targetX, double targetY, bool reverseFacing) {
       turnError += 2 * PI;
     }
 
-    task::sleep(10);
+    wait(5,msec);
   }
 
   leftDrive.stop();
@@ -222,7 +222,7 @@ void driveToPoint(double targetX, double targetY, bool reverseFacing) {
     leftDrive.spin(forward, drivePower - turnPower, voltageUnits::volt);
     rightDrive.spin(forward, drivePower + turnPower, voltageUnits::volt);
 
-    task::sleep(10);
+    wait(5,msec);
   }
 
   leftDrive.stop();
