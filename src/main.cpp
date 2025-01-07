@@ -9,17 +9,13 @@
 
 #include "vex.h"
 #include <cmath>
-//#include <string>
 #include "vars.h"
 
-// fuck best practices, im doing this:
 using namespace vex;
 using namespace std;
 
-// A global instance of competition
 competition Competition;
 
-// define your global instances of motors and other devices here
 brain Thinky;
 
 motor lm(1, false);

@@ -1,6 +1,4 @@
-//hi
-
-//PID variable tuning (will take fucking forever)
+//PID variable tuning
 //straight tuning
 double kP = 0.03;
 double kI = 0.00001;
