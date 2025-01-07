@@ -168,11 +168,11 @@ void pointTowardPoint(double targetX, double targetY, bool reverseFacing) {
 
     // Determine the optimal turn direction
     if (turnError > 0) {
-      leftDrive.spin(forward, -turnPower, voltageUnits::volt);
-      rightDrive.spin(forward, turnPower, voltageUnits::volt);
-    } else {
       leftDrive.spin(forward, turnPower, voltageUnits::volt);
       rightDrive.spin(forward, -turnPower, voltageUnits::volt);
+    } else {
+      leftDrive.spin(forward, -turnPower, voltageUnits::volt);
+      rightDrive.spin(forward, turnPower, voltageUnits::volt);
     }
 
     turnError = desiredHeading - globalHeading;
