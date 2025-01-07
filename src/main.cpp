@@ -47,7 +47,11 @@ encoder armEncoder = encoder(noggin.ThreeWirePort.A);
 
 digital_out clamp = digital_out(noggin.ThreeWirePort.C);
 
+Toggle clampLatch;
 
+PID lateralPID(0,0,0);
+PID headingPID(0,0,0);
+PID armPID(0,0,0);
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -230,7 +234,11 @@ void driveToPoint(double targetX, double targetY, bool reverseFacing) {
 }
 
 void turnarmTo (double targetPosition){
-  // TODO: lmfao
+  while(abs(armEncoder.position(degrees)-targetPosition) > 1){
+    double power = armPID.update(armEncoder.position(degrees), targetPosition);
+    armMotor.spin(forward, power, voltageUnits::volt);
+  }
+  armMotor.stop();
 }
 
 /*---------------------------------------------------------------------------*/
