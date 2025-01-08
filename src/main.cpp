@@ -19,25 +19,29 @@ competition Competition;
 brain noggin;
 controller sticks = controller(primary);
 
-motor frontLeftMotor = motor(PORT1, ratio6_1, false);
-motor middleLeftMotor = motor(PORT2, ratio6_1, false);
-motor backLeftMotor = motor(PORT3, ratio6_1, false);
-motor frontRightMotor = motor(PORT8, ratio6_1, true);
-motor middleRightMotor = motor(PORT9, ratio6_1, true);
-motor backRightMotor = motor(PORT10, ratio6_1, true);
+motor topLeftMotor = motor(PORT8, ratio18_1, false); //5.5
+motor middleLeftMotor = motor(PORT9, ratio6_1, false);
+motor bottomLeftMotor = motor(PORT10, ratio6_1, true);
+motor topRightMotor = motor(PORT3, ratio18_1, true); //5.5
+motor middleRightMotor = motor(PORT2, ratio6_1, true);
+motor bottomRightMotor = motor(PORT1, ratio6_1, false);
 
-motor_group leftDrive = motor_group(frontLeftMotor, middleLeftMotor, backLeftMotor);
-motor_group rightDrive = motor_group(frontRightMotor, middleRightMotor, backRightMotor);
+motor_group leftDrive = motor_group(topLeftMotor, middleLeftMotor, bottomLeftMotor);
+motor_group rightDrive = motor_group(topRightMotor, middleRightMotor, bottomRightMotor);
 
-motor firstStageIntake = motor(PORT5, ratio6_1);
-motor secondStageIntake = motor(PORT6, ratio6_1);
+motor firstStageIntake = motor(PORT7, ratio6_1, false);
+motor secondStageIntake = motor(PORT6, ratio6_1, false);
 
 motor_group intake = motor_group(firstStageIntake, secondStageIntake);
 
-motor armMotor = motor(PORT5, ratio18_1); // not fs port
+motor rightArmMotor = motor(PORT4, ratio18_1, true);
+motor leftArmMotor = motor(PORT5, ratio18_1,false);
+
+motor_group armMotor = motor_group(rightArmMotor, leftArmMotor);
 
 
-triport expander = triport(PORT11);
+
+triport expander = triport(PORT18);
 
 encoder leftEncoder = encoder(expander.A);
 encoder rightEncoder = encoder(expander.E);
@@ -47,10 +51,17 @@ encoder armEncoder = encoder(noggin.ThreeWirePort.A);
 
 digital_out clamp = digital_out(noggin.ThreeWirePort.C);
 
+led redLED = led(noggin.ThreeWirePort.F);
+led yellowLED = led(noggin.ThreeWirePort.G);
+led greenLED = led(noggin.ThreeWirePort.H);
+
+inertial inertialSensor = inertial(PORT19);
+vision visionSensor = vision(PORT20);
+
 Toggle clampLatch;
 
 PID lateralPID(0,0,0);
-PID headingPID(0,0,0);
+PID headingPID(7.6,0,0);
 PID armPID(0,0,0);
 
 /*---------------------------------------------------------------------------*/
@@ -63,8 +74,6 @@ void reset(){
   leftEncoder.resetRotation();
   rightEncoder.resetRotation();
   backEncoder.resetRotation();
-  globalX=0;
-  globalY=0;
 }
 
 // Unit Conversions
@@ -99,7 +108,7 @@ int odometry(){
     double deltaB = degToInch(abs(currentB - prevB));
     if (currentB<prevB) deltaB *= -1;
 
-    double deltaT = (deltaL - deltaR) / (leftWheelDist + rightWheelDist);
+    double deltaT = (deltaR - deltaL) / (leftWheelDist + rightWheelDist);
 
     double tx = 0, ty = 0;
     if (deltaT == 0){
@@ -117,8 +126,8 @@ int odometry(){
     double deltaX = r*cos(angleA+angleB);
     double deltaY = r*sin(angleA+angleB);
 
-    globalX += deltaX;
-    globalY += deltaY;
+    globalX -= deltaX;
+    globalY -= deltaY;
     globalHeading += deltaT;
     if(globalHeading < 0) globalHeading += 2*PI;
     globalHeading = fmod(fmod(globalHeading,2*PI) + 2*PI, 2*PI);
@@ -159,32 +168,32 @@ void pointTowardPoint(double targetX, double targetY, bool reverseFacing) {
     desiredHeading = fmod(desiredHeading + 2 * PI, 2 * PI); // Normalize to 0-2PI
   }
 
-  double turnError = desiredHeading - globalHeading;
+  double turnError = radToDeg(desiredHeading) - radToDeg(globalHeading);
 
-  if (turnError > PI) {
-    turnError -= 2 * PI;
-  } else if (turnError < -PI) {
-    turnError += 2 * PI;
+  if (turnError > 180) {
+    turnError -= 360;
+  } else if (turnError < -180) {
+    turnError += 360;
   }
 
-  while (abs(turnError) > degToRad(1)) { // Stop turning when within 1 degree of target
+  while (abs(turnError) > 1) { // Stop turning when within 1 degree of target
     double turnPower = headingPID.update(globalHeading, desiredHeading);
 
     // Determine the optimal turn direction
     if (turnError > 0) {
-      leftDrive.spin(forward, turnPower, voltageUnits::volt);
-      rightDrive.spin(forward, -turnPower, voltageUnits::volt);
-    } else {
       leftDrive.spin(forward, -turnPower, voltageUnits::volt);
       rightDrive.spin(forward, turnPower, voltageUnits::volt);
+    } else {
+      leftDrive.spin(forward, turnPower, voltageUnits::volt);
+      rightDrive.spin(forward, -turnPower, voltageUnits::volt);
     }
 
-    turnError = desiredHeading - globalHeading;
-    if (turnError > PI) {
-      turnError -= 2 * PI;
-    } else if (turnError < -PI) {
-      turnError += 2 * PI;
-    }
+    turnError = radToDeg(desiredHeading) - radToDeg(globalHeading);
+      if (turnError > 180) {
+    turnError -= 360;
+  } else if (turnError < -180) {
+    turnError += 360;
+  }
 
     wait(5,msec);
   }
@@ -255,11 +264,15 @@ void pre_auton(void) {
 
   firstStageIntake.setVelocity(100, percent);
   secondStageIntake.setVelocity(66, percent);
+
+  armMotor.setVelocity(100,percent);
   
 }
 
 void autonomous(void) {
-  
+  task odom(odometry);
+  pointTowardPoint(10, 10, false);
+  wait(100,sec);
 }
 
 /*---------------------------------------------------------------------------*/

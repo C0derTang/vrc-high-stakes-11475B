@@ -1,19 +1,20 @@
-double prevL = 0;
-double prevR = 0;
-double prevB = 0;
-double globalHeading = 0;
-
-double turnImportance = 0.5;
-
-double globalX = 0;
-double globalY = 0;
-
 //constants
 const double PI = 3.14159265;
 const double wheelDiameter = 2.75;
 const double leftWheelDist = 4.5;
 const double rightWheelDist =4.5;
 const double backWheelDist = 1.75;
+
+double prevL = 0;
+double prevR = 0;
+double prevB = 0;
+
+double turnImportance = 0.3;
+
+double globalX = 0;
+double globalY = 0;
+double globalHeading = 0;
+
 
 struct Toggle{
     bool state = false;
