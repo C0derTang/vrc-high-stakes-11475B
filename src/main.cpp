@@ -108,7 +108,7 @@ int odometry(){
     double deltaB = degToInch(abs(currentB - prevB));
     if (currentB<prevB) deltaB *= -1;
 
-    double deltaT = (deltaR - deltaL) / (leftWheelDist + rightWheelDist);
+    double deltaT = (deltaL - deltaR) / (leftWheelDist + rightWheelDist);
 
     double tx = 0, ty = 0;
     if (deltaT == 0){
@@ -126,8 +126,8 @@ int odometry(){
     double deltaX = r*cos(angleA+angleB);
     double deltaY = r*sin(angleA+angleB);
 
-    globalX -= deltaX;
-    globalY -= deltaY;
+    globalX += deltaX;
+    globalY += deltaY;
     globalHeading += deltaT;
     if(globalHeading < 0) globalHeading += 2*PI;
     globalHeading = fmod(fmod(globalHeading,2*PI) + 2*PI, 2*PI);
@@ -177,7 +177,7 @@ void pointTowardPoint(double targetX, double targetY, bool reverseFacing) {
   }
 
   while (abs(turnError) > 1) { // Stop turning when within 1 degree of target
-    double turnPower = headingPID.update(globalHeading, desiredHeading);
+    double turnPower = headingPID.update(radToDeg(globalHeading), radToDeg(desiredHeading));
 
     // Determine the optimal turn direction
     if (turnError > 0) {
