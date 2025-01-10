@@ -60,8 +60,8 @@ vision visionSensor = vision(PORT20);
 
 Toggle clampLatch;
 
-PID lateralPID(0,0,0);
-PID headingPID(7.6,0,0);
+PID lateralPID(0.1,0,0);
+PID headingPID(.35,.0001,1);
 PID armPID(0,0,0);
 
 /*---------------------------------------------------------------------------*/
@@ -92,6 +92,28 @@ double degToRad(double val){
 }
 double radToDeg(double val){
   return val*180/PI;
+}
+
+int debug(){
+  while(true){
+    /*
+   sticks.Screen.clearLine(1);
+    sticks.Screen.setCursor(1,0);
+    sticks.Screen.print("X position: ");
+    sticks.Screen.print(globalX);
+    
+    sticks.Screen.clearLine(2);
+    sticks.Screen.setCursor(2,0);
+    sticks.Screen.print("Y position: ");
+    sticks.Screen.print(globalY);
+    */
+
+     sticks.Screen.clearLine(3);
+    sticks.Screen.setCursor(3,0);
+    sticks.Screen.print("Current heading: ");
+    sticks.Screen.print(radToDeg(globalHeading));
+    task::sleep(20);
+  }
 }
 
 // odometry thread
@@ -127,29 +149,14 @@ int odometry(){
     double deltaY = r*sin(angleA+angleB);
 
     globalX += deltaX;
-    globalY += deltaY;
-    globalHeading += deltaT;
+    globalY -= deltaY;
+    globalHeading -= deltaT;
     if(globalHeading < 0) globalHeading += 2*PI;
     globalHeading = fmod(fmod(globalHeading,2*PI) + 2*PI, 2*PI);
 
     prevL = currentL;
     prevR = currentR;
-    prevB = currentB;
-
-    sticks.Screen.clearLine(1);
-    sticks.Screen.setCursor(1,0);
-    sticks.Screen.print("X position: ");
-    sticks.Screen.print(globalX);
-    
-    sticks.Screen.clearLine(2);
-    sticks.Screen.setCursor(2,0);
-    sticks.Screen.print("Y position: ");
-    sticks.Screen.print(globalY);
-
-     sticks.Screen.clearLine(3);
-    sticks.Screen.setCursor(3,0);
-    sticks.Screen.print("Current heading: ");
-    sticks.Screen.print(radToDeg(globalHeading));
+    prevB = currentB; 
   
     task::sleep(5);
   }
@@ -175,18 +182,16 @@ void pointTowardPoint(double targetX, double targetY, bool reverseFacing) {
   } else if (turnError < -180) {
     turnError += 360;
   }
+  double turnPower =0;
 
-  while (abs(turnError) > 1) { // Stop turning when within 1 degree of target
-    double turnPower = headingPID.update(radToDeg(globalHeading), radToDeg(desiredHeading));
+  double counter = abs(turnError)/.55;
+  while (counter > 0) { // Stop turning when within 1 degree of target
+    turnPower = headingPID.update(0, -turnError);
+
 
     // Determine the optimal turn direction
-    if (turnError > 0) {
       leftDrive.spin(forward, -turnPower, voltageUnits::volt);
       rightDrive.spin(forward, turnPower, voltageUnits::volt);
-    } else {
-      leftDrive.spin(forward, turnPower, voltageUnits::volt);
-      rightDrive.spin(forward, -turnPower, voltageUnits::volt);
-    }
 
     turnError = radToDeg(desiredHeading) - radToDeg(globalHeading);
       if (turnError > 180) {
@@ -194,48 +199,28 @@ void pointTowardPoint(double targetX, double targetY, bool reverseFacing) {
   } else if (turnError < -180) {
     turnError += 360;
   }
-
-    wait(5,msec);
+    counter -= 1;
+    wait(10,msec);
   }
 
   leftDrive.stop();
   rightDrive.stop();
 }
 
-void driveToPoint(double targetX, double targetY, bool reverseFacing) {
-  pointTowardPoint(targetX, targetY, reverseFacing);
+void driveXInches(double distance) {
+  double initialPosition = -(leftEncoder.position(degrees) + rightEncoder.position(degrees))/2;
+  double currentDistance = -(leftEncoder.position(degrees) + rightEncoder.position(degrees))/2-initialPosition;
+  double error = currentDistance-inchToDeg(distance);
 
-  double deltaX = targetX - globalX;
-  double deltaY = targetY - globalY;
-  double distance = sqrt(deltaX * deltaX + deltaY * deltaY);
-
-  while (distance > 0.5) { // Stop when within 0.5 inches of the target
-    double currentX = globalX;
-    double currentY = globalY;
-
-    deltaX = targetX - currentX;
-    deltaY = targetY - currentY;
-    distance = sqrt(deltaX * deltaX + deltaY * deltaY);
-    double desiredHeading = atan2(deltaY, deltaX);
-
-    double turnError = desiredHeading - globalHeading;
-    if (turnError > PI) {
-      turnError -= 2 * PI;
-    } else if (turnError < -PI) {
-      turnError += 2 * PI;
-    }
-
-    double turnPower = headingPID.update(globalHeading, desiredHeading);
+  while (error > 0.5) { // Stop when within 0.5 inches of the target
+    double currentDistance = -(leftEncoder.position(degrees) + rightEncoder.position(degrees))/2-initialPosition;
+    double error = currentDistance-inchToDeg(distance);
     double drivePower = lateralPID.update(0, distance);
 
-    if (reverseFacing) {
-      drivePower *= -1;
-    }
+    leftDrive.spin(forward, drivePower, voltageUnits::volt);
+    rightDrive.spin(forward, drivePower, voltageUnits::volt);
 
-    leftDrive.spin(forward, drivePower - turnPower, voltageUnits::volt);
-    rightDrive.spin(forward, drivePower + turnPower, voltageUnits::volt);
-
-    wait(5,msec);
+    wait(10,msec);
   }
 
   leftDrive.stop();
@@ -271,7 +256,10 @@ void pre_auton(void) {
 
 void autonomous(void) {
   task odom(odometry);
-  pointTowardPoint(10, 10, false);
+  driveXInches(10);
+  pointTowardPoint(0, 10, false);
+  sticks.Screen.clearScreen();
+  sticks.Screen.print(radToDeg(globalHeading));
   wait(100,sec);
 }
 
@@ -307,6 +295,11 @@ void usercontrol(void) {
 
     clampLatch.check(sticks.ButtonX.pressing());
     clamp.set(clampLatch.state);
+
+    //DEBUG
+  
+
+    //END DEBUG
         
     wait(5, msec); 
   }
