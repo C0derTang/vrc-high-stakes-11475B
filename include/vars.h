@@ -40,11 +40,9 @@ struct PID{
     double cumulativeError = 0;
     double previousError = 0;
 
-    double maxPower = 12.0;
-
     PID(double p_, double i_, double d_) : kP(p_), kI(i_), kD(d_) {}
 
-    double update(double current, double target){
+    double update(double current, double target, double maxPower){
         double error = target-current;
 
         cumulativeError += error;

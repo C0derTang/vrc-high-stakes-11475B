@@ -60,8 +60,8 @@ vision visionSensor = vision(PORT20);
 
 Toggle clampLatch;
 
-PID lateralPID(0.1,0,0);
-PID headingPID(.35,.0001,1);
+PID lateralPID(.08,.00069,.72);
+PID headingPID(.35,.0005,1.8);
 PID armPID(0,0,0);
 
 /*---------------------------------------------------------------------------*/
@@ -164,6 +164,41 @@ int odometry(){
 }
 
 // drive functions
+void turnToHeading(double desiredHeading) {
+  double turnError = desiredHeading-radToDeg(globalHeading);
+
+  if (turnError > 180) {
+    turnError -= 360;
+  } else if (turnError < -180) {
+    turnError += 360;
+  }
+
+  double turnPower = 0;
+
+  double counter = abs(turnError)/.55;
+  while (counter > 0) { 
+    turnPower = headingPID.update(0, -turnError, 12);
+    
+    leftDrive.spin(forward, -turnPower, voltageUnits::volt);
+    rightDrive.spin(forward, turnPower, voltageUnits::volt);
+
+    double currentHeading = radToDeg(globalHeading);
+    turnError = desiredHeading - currentHeading;
+
+    if (turnError > 180) {
+      turnError -= 360;
+    } else if (turnError < -180) {
+      turnError += 360;
+    }
+    counter -= 1;
+    wait(10, msec);
+  }
+
+  leftDrive.stop();
+  rightDrive.stop();
+}
+
+
 void pointTowardPoint(double targetX, double targetY, bool reverseFacing) {
   double deltaX = targetX - globalX;
   double deltaY = targetY - globalY;
@@ -185,11 +220,8 @@ void pointTowardPoint(double targetX, double targetY, bool reverseFacing) {
   double turnPower =0;
 
   double counter = abs(turnError)/.55;
-  while (counter > 0) { // Stop turning when within 1 degree of target
-    turnPower = headingPID.update(0, -turnError);
-
-
-    // Determine the optimal turn direction
+  while (counter > 0) {
+    turnPower = headingPID.update(0, -turnError, 12);
       leftDrive.spin(forward, -turnPower, voltageUnits::volt);
       rightDrive.spin(forward, turnPower, voltageUnits::volt);
 
@@ -207,29 +239,33 @@ void pointTowardPoint(double targetX, double targetY, bool reverseFacing) {
   rightDrive.stop();
 }
 
-void driveXInches(double distance) {
+void driveXInches(double distance, double maxPower) {
   double initialPosition = -(leftEncoder.position(degrees) + rightEncoder.position(degrees))/2;
   double currentDistance = -(leftEncoder.position(degrees) + rightEncoder.position(degrees))/2-initialPosition;
-  double error = currentDistance-inchToDeg(distance);
+  double error = inchToDeg(distance)-currentDistance;
 
-  while (error > 0.5) { // Stop when within 0.5 inches of the target
-    double currentDistance = -(leftEncoder.position(degrees) + rightEncoder.position(degrees))/2-initialPosition;
-    double error = currentDistance-inchToDeg(distance);
-    double drivePower = lateralPID.update(0, distance);
+  double counter = distance/.08;
+  while (counter > 0) { // Stop when within 0.5 inches of the target
+    currentDistance = -(leftEncoder.position(degrees) + rightEncoder.position(degrees))/2-initialPosition;
+    error = currentDistance-inchToDeg(distance);
+    double drivePower = lateralPID.update(0, -error, maxPower);
 
     leftDrive.spin(forward, drivePower, voltageUnits::volt);
     rightDrive.spin(forward, drivePower, voltageUnits::volt);
 
+    counter -= 1;
     wait(10,msec);
+  /* sticks.Screen.clearScreen();
+  sticks.Screen.setCursor(1,1);
+  sticks.Screen.print(error);*/
   }
-
   leftDrive.stop();
   rightDrive.stop();
 }
 
 void turnarmTo (double targetPosition){
   while(abs(armEncoder.position(degrees)-targetPosition) > 1){
-    double power = armPID.update(armEncoder.position(degrees), targetPosition);
+    double power = armPID.update(armEncoder.position(degrees), targetPosition, 6);
     armMotor.spin(forward, power, voltageUnits::volt);
   }
   armMotor.stop();
@@ -256,8 +292,15 @@ void pre_auton(void) {
 
 void autonomous(void) {
   task odom(odometry);
-  driveXInches(10);
-  pointTowardPoint(0, 10, false);
+  driveXInches(20,9);
+  turnToHeading(90);
+  
+  driveXInches(20,9);
+  turnToHeading(270);
+  driveXInches(20,9);
+  turnToHeading(180);
+  driveXInches(20,9);
+  
   sticks.Screen.clearScreen();
   sticks.Screen.print(radToDeg(globalHeading));
   wait(100,sec);
