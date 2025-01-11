@@ -60,7 +60,7 @@ vision visionSensor = vision(PORT20);
 
 Toggle clampLatch;
 
-PID lateralPID(.08,.00069,.72);
+PID lateralPID(.04,.00069,.1);
 PID headingPID(.35,.0005,1.8);
 PID armPID(0,0,0);
 
@@ -164,7 +164,7 @@ int odometry(){
 }
 
 // drive functions
-void turnToHeading(double desiredHeading) {
+void turnToHeading(double desiredHeading, double waitTime) {
   double turnError = desiredHeading-radToDeg(globalHeading);
 
   if (turnError > 180) {
@@ -175,7 +175,7 @@ void turnToHeading(double desiredHeading) {
 
   double turnPower = 0;
 
-  double counter = abs(turnError)/.55;
+  double counter = waitTime/.01;
   while (counter > 0) { 
     turnPower = headingPID.update(0, -turnError, 12);
     
@@ -239,12 +239,12 @@ void pointTowardPoint(double targetX, double targetY, bool reverseFacing) {
   rightDrive.stop();
 }
 
-void driveXInches(double distance, double maxPower) {
+void driveXInches(double distance, double maxPower, double waitTime) {
   double initialPosition = -(leftEncoder.position(degrees) + rightEncoder.position(degrees))/2;
   double currentDistance = -(leftEncoder.position(degrees) + rightEncoder.position(degrees))/2-initialPosition;
   double error = inchToDeg(distance)-currentDistance;
 
-  double counter = distance/.08;
+  double counter = waitTime/.01;
   while (counter > 0) { // Stop when within 0.5 inches of the target
     currentDistance = -(leftEncoder.position(degrees) + rightEncoder.position(degrees))/2-initialPosition;
     error = currentDistance-inchToDeg(distance);
@@ -290,21 +290,72 @@ void pre_auton(void) {
   
 }
 
-void autonomous(void) {
+void redSideAutonomous(void) {
   task odom(odometry);
-  driveXInches(20,9);
-  turnToHeading(90);
-  
-  driveXInches(20,9);
-  turnToHeading(270);
-  driveXInches(20,9);
-  turnToHeading(180);
-  driveXInches(20,9);
-  
-  sticks.Screen.clearScreen();
-  sticks.Screen.print(radToDeg(globalHeading));
+  driveXInches(20,6,1);
+  turnToHeading(330,.5);
+  driveXInches(14,6,.6);
+  clamp.set(true);
+  wait(.2,sec);
+  intake.spin(forward);
+  wait(1,sec);
+  intake.stop();
+  clamp.set(false);
+  turnToHeading(-90,.9);
+  secondStageIntake.setVelocity(45,percent);
+  intake.spin(forward);
+  driveXInches(-22,6,1.2); // drive to goal
+  intake.stop();
+  secondStageIntake.setVelocity(66,percent);
+  turnToHeading(0,.9);
+  driveXInches(17,4,1);
+  clamp.set(true);
+  wait(.2,sec);
+    driveXInches(-16.75,6,.8);
+  intake.spin(forward);
+  wait(1,sec);
+  intake.stop();
+  armMotor.spinFor(forward, 700, degrees, false);
+  turnToHeading(90,1);
+  driveXInches(-25,7,3);
   wait(100,sec);
 }
+
+void blueSideAutonomous(void) {
+  task odom(odometry);
+  driveXInches(20,6,1);
+  turnToHeading(28,.5);
+  
+  driveXInches(14,6,.6);
+  clamp.set(true);
+  wait(.2,sec);
+  intake.spin(forward);
+  wait(1,sec);
+  intake.stop();
+  clamp.set(false);
+  turnToHeading(90,.9);
+  firstStageIntake.setVelocity(80,percent);
+  secondStageIntake.setVelocity(45,percent);
+  intake.spin(forward);
+  driveXInches(-20,6,1.2); // drive to goal
+  intake.stop();
+  firstStageIntake.setVelocity(100,percent);
+  secondStageIntake.setVelocity(66,percent);
+  turnToHeading(-5,.9);
+  driveXInches(13.75,4,1);
+  clamp.set(true);
+  wait(.2,sec);
+    driveXInches(-13.5,6,.8);
+  intake.spin(forward);
+  wait(1,sec);
+  intake.stop();
+  armMotor.spinFor(forward, 700, degrees, false);
+  turnToHeading(-90,1);
+  driveXInches(-30,7,3);
+  
+  wait(100,sec);
+}
+
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -313,9 +364,8 @@ void autonomous(void) {
 /*---------------------------------------------------------------------------*/
 
 void usercontrol(void) {
-  
+  clampLatch.state = true;
   reset();
-  sticks.Screen.clearScreen();
   task odom(odometry);
 
   while (true) {
@@ -353,7 +403,7 @@ void usercontrol(void) {
 //
 int main() {
   // Set up callbacks for autonomous and driver control periods.
-  Competition.autonomous(autonomous);
+  Competition.autonomous(blueSideAutonomous);
   Competition.drivercontrol(usercontrol);
 
   // Run the pre-autonomous function.
