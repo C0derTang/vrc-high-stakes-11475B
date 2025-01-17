@@ -58,11 +58,12 @@ led greenLED = led(noggin.ThreeWirePort.H);
 inertial inertialSensor = inertial(PORT19);
 vision visionSensor = vision(PORT20);
 
-Toggle clampLatch;
+Toggle clampLatch(2);
+Toggle armLatch(3);
 
 PID lateralPID(.04,.00069,.1);
 PID headingPID(.35,.0005,1.8);
-PID armPID(0,0,0);
+PID armPID(.14,0,8);
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -74,6 +75,8 @@ void reset(){
   leftEncoder.resetRotation();
   rightEncoder.resetRotation();
   backEncoder.resetRotation();
+  armEncoder.resetRotation();
+  clamp.set(false);
 }
 
 // Unit Conversions
@@ -263,12 +266,14 @@ void driveXInches(double distance, double maxPower, double waitTime) {
   rightDrive.stop();
 }
 
-void turnarmTo (double targetPosition){
-  while(abs(armEncoder.position(degrees)-targetPosition) > 1){
-    double power = armPID.update(armEncoder.position(degrees), targetPosition, 6);
+int armControlThread(){
+  while(true){ 
+    double power = armPID.update(armEncoder.position(degrees), targetArmPosition, 12);
     armMotor.spin(forward, power, voltageUnits::volt);
+
+    task::sleep(1);
   }
-  armMotor.stop();
+  return 1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -280,11 +285,13 @@ void turnarmTo (double targetPosition){
 void pre_auton(void) {
   leftDrive.setStopping(coast);
   rightDrive.setStopping(coast);
-  intake.setStopping(coast);
+  intake.setStopping(brake);
   armMotor.setStopping(hold);
 
+  //120 * 5
+
   firstStageIntake.setVelocity(100, percent);
-  secondStageIntake.setVelocity(66, percent);
+  secondStageIntake.setVelocity(100, percent);
 
   armMotor.setVelocity(100,percent);
   
@@ -356,6 +363,9 @@ void blueSideAutonomous(void) {
   wait(100,sec);
 }
 
+void skills(void){
+
+}
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -364,15 +374,15 @@ void blueSideAutonomous(void) {
 /*---------------------------------------------------------------------------*/
 
 void usercontrol(void) {
-  clampLatch.state = true;
   reset();
-  task odom(odometry);
+  //task odom(odometry);
+  task arm(armControlThread);
 
   while (true) {
     double turnVal = sticks.Axis1.position(percent);
     double fwdVal = sticks.Axis3.position(percent);
 
-    double turnVolts = turnVal * 0.12;
+    double turnVolts = turnVal * 0.11;
     double fwdVolts = fwdVal * 0.12 * (1-(abs(turnVolts/12.0)) * turnImportance);
 
     leftDrive.spin(forward, fwdVolts + turnVolts, voltageUnits::volt);
@@ -381,18 +391,19 @@ void usercontrol(void) {
     if (sticks.ButtonL1.pressing()) intake.spin(forward);
     else if (sticks.ButtonL2.pressing()) intake.spin(reverse);
     else intake.stop();
-
+/*
     if (sticks.ButtonR1.pressing()) armMotor.spin(forward);
     else if (sticks.ButtonR2.pressing()) armMotor.spin(reverse);
-    else armMotor.stop();
+    else armMotor.stop();*/
 
     clampLatch.check(sticks.ButtonX.pressing());
     clamp.set(clampLatch.state);
 
-    //DEBUG
-  
+    armLatch.check(sticks.ButtonY.pressing());
 
-    //END DEBUG
+    if (armLatch.state == 0) {targetArmPosition = 0;}
+    else if (armLatch.state == 1) {targetArmPosition = 120;}
+    else if (armLatch.state == 2){secondStageIntake.spinFor(reverse,80,degrees, false); targetArmPosition = 666;}
         
     wait(5, msec); 
   }
@@ -403,7 +414,7 @@ void usercontrol(void) {
 //
 int main() {
   // Set up callbacks for autonomous and driver control periods.
-  Competition.autonomous(blueSideAutonomous);
+  Competition.autonomous(redSideAutonomous);
   Competition.drivercontrol(usercontrol);
 
   // Run the pre-autonomous function.

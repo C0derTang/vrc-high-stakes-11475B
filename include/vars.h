@@ -15,15 +15,19 @@ double globalX = 0;
 double globalY = 0;
 double globalHeading = 0;
 
+double targetArmPosition = 0;
 
 struct Toggle{
-    bool state = false;
+    int states = 2;
+    int state = 0;
     bool latch = false;
+
+    Toggle(int s_) : states(s_) {}
 
     void check(bool cond){
       if (cond){
         if (!latch){
-          state  = !state;
+          state = (state+1)%states;
           latch = true;
         }
         }else{
