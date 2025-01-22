@@ -19,7 +19,8 @@ competition Competition;
 brain noggin;
 controller sticks = controller(primary);
 
-motor topLeftMotor = motor(PORT8, ratio18_1, false); //5.5
+// 8 and 18 are fried
+motor topLeftMotor = motor(PORT16, ratio18_1, false); //5.5
 motor middleLeftMotor = motor(PORT9, ratio6_1, false);
 motor bottomLeftMotor = motor(PORT10, ratio6_1, true);
 motor topRightMotor = motor(PORT3, ratio18_1, true); //5.5
@@ -41,7 +42,7 @@ motor_group armMotor = motor_group(rightArmMotor, leftArmMotor);
 
 
 
-triport expander = triport(PORT18);
+triport expander = triport(PORT15);
 
 encoder leftEncoder = encoder(expander.A);
 encoder rightEncoder = encoder(expander.E);
@@ -77,6 +78,19 @@ void reset(){
   backEncoder.resetRotation();
   armEncoder.resetRotation();
   clamp.set(false);
+
+  leftDrive.setStopping(coast);
+  rightDrive.setStopping(coast);
+  intake.setStopping(brake);
+  armMotor.setStopping(hold);
+
+  //120 * 5
+
+  firstStageIntake.setVelocity(100, percent);
+  secondStageIntake.setVelocity(100, percent);
+  intake.setMaxTorque(100,percent);
+
+  armMotor.setVelocity(100,percent);
 }
 
 // Unit Conversions
@@ -247,14 +261,25 @@ void driveXInches(double distance, double maxPower, double waitTime) {
   double currentDistance = -(leftEncoder.position(degrees) + rightEncoder.position(degrees))/2-initialPosition;
   double error = inchToDeg(distance)-currentDistance;
 
+  double initialHeading = radToDeg(globalHeading);
+
   double counter = waitTime/.01;
   while (counter > 0) { // Stop when within 0.5 inches of the target
     currentDistance = -(leftEncoder.position(degrees) + rightEncoder.position(degrees))/2-initialPosition;
     error = currentDistance-inchToDeg(distance);
     double drivePower = lateralPID.update(0, -error, maxPower);
 
-    leftDrive.spin(forward, drivePower, voltageUnits::volt);
-    rightDrive.spin(forward, drivePower, voltageUnits::volt);
+    double headingError = initialHeading - radToDeg(globalHeading);
+    if (headingError > 180) {
+      headingError -= 360;
+    } else if (headingError < -180) {
+      headingError += 360;
+    }
+
+    double correctionPower = headingPID.update(0, -headingError, 1);
+
+    leftDrive.spin(forward, drivePower - correctionPower, voltageUnits::volt);
+    rightDrive.spin(forward, drivePower + correctionPower, voltageUnits::volt);
 
     counter -= 1;
     wait(10,msec);
@@ -292,14 +317,16 @@ void pre_auton(void) {
 
   firstStageIntake.setVelocity(100, percent);
   secondStageIntake.setVelocity(100, percent);
+  intake.setMaxTorque(100,percent);
 
   armMotor.setVelocity(100,percent);
   
 }
 
-void redSideAutonomous(void) {
+void redCloseSideAutonomous(void) {
+  reset();
   task odom(odometry);
-  driveXInches(20,6,1);
+  driveXInches(19.5,6,1);
   turnToHeading(330,.5);
   driveXInches(14,6,.6);
   clamp.set(true);
@@ -314,8 +341,8 @@ void redSideAutonomous(void) {
   driveXInches(-22,6,1.2); // drive to goal
   intake.stop();
   secondStageIntake.setVelocity(66,percent);
-  turnToHeading(0,.9);
-  driveXInches(17,4,1);
+  turnToHeading(355,.9);
+  driveXInches(16,4,1);
   clamp.set(true);
   wait(.2,sec);
     driveXInches(-16.75,6,.8);
@@ -328,9 +355,39 @@ void redSideAutonomous(void) {
   wait(100,sec);
 }
 
-void blueSideAutonomous(void) {
+void redFarSideAutonomous(void) {
+  reset();
   task odom(odometry);
-  driveXInches(20,6,1);
+  driveXInches(19.5,6,1);
+  turnToHeading(28,.5);
+  
+  driveXInches(14,6,.6);
+  clamp.set(true);
+  wait(.2,sec);
+  intake.spin(forward);
+  wait(1,sec);
+  intake.stop();
+  turnToHeading(90,1);
+  intake.spin(forward);
+  driveXInches(-20,6,1.5); // drive to goal
+  turnToHeading(175,1);
+  driveXInches(-10,4,1);
+  wait(.5,sec);
+  driveXInches(10,6,.8);  
+  wait(.5,sec);
+  intake.stop();
+  turnToHeading(250, 1.3);
+  armMotor.spinFor(forward, 700, degrees, false);
+  driveXInches(-22,6,3);  
+
+}
+
+
+
+void blueCloseSideAutonomous(void) {
+  reset();
+  task odom(odometry);
+  driveXInches(20.5,6,1);
   turnToHeading(28,.5);
   
   driveXInches(14,6,.6);
@@ -341,15 +398,14 @@ void blueSideAutonomous(void) {
   intake.stop();
   clamp.set(false);
   turnToHeading(90,.9);
-  firstStageIntake.setVelocity(80,percent);
-  secondStageIntake.setVelocity(45,percent);
+  secondStageIntake.setVelocity(48,percent);
   intake.spin(forward);
   driveXInches(-20,6,1.2); // drive to goal
   intake.stop();
   firstStageIntake.setVelocity(100,percent);
   secondStageIntake.setVelocity(66,percent);
   turnToHeading(-5,.9);
-  driveXInches(13.75,4,1);
+  driveXInches(13.5,4,1);
   clamp.set(true);
   wait(.2,sec);
     driveXInches(-13.5,6,.8);
@@ -358,13 +414,52 @@ void blueSideAutonomous(void) {
   intake.stop();
   armMotor.spinFor(forward, 700, degrees, false);
   turnToHeading(-90,1);
-  driveXInches(-30,7,3);
+  driveXInches(-26,7,3);
   
   wait(100,sec);
 }
 
-void skills(void){
+void blueFarSideAutonomous(void) {
+    reset();
+  task odom(odometry);
+  driveXInches(20.5,6,1);
+  turnToHeading(332,.5);
+  
+  driveXInches(14,6,.6);
+  clamp.set(true);
+  wait(.2,sec);
+  intake.spin(forward);
+  wait(1,sec);
+  intake.stop();
+  turnToHeading(270,1);
+  intake.spin(forward);
+  driveXInches(-21,6,1.2); // drive to goal
+  driveXInches(1,8,.1); // drive to goal
+  turnToHeading(185,1);
+  driveXInches(-10,5,1);
+  wait(.5,sec);
+  driveXInches(10,6,.8);  
+  wait(.5,sec);
+  intake.stop();
+  turnToHeading(110, 1.3);
+  armMotor.spinFor(forward, 700, degrees, false);
+  driveXInches(-22,6,3);  
 
+}
+
+
+void skills(void){
+  reset();
+  task odom(odometry);
+  intake.spin(forward);
+  wait(.6,sec);
+  intake.stop();
+  driveXInches(-13, 6, 1.4);
+  turnToHeading(86,1);
+  driveXInches(17.5,5,1);
+  clamp.set(true);
+  wait(.2,sec);
+  turnToHeading(270,2);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -374,8 +469,6 @@ void skills(void){
 /*---------------------------------------------------------------------------*/
 
 void usercontrol(void) {
-  reset();
-  //task odom(odometry);
   task arm(armControlThread);
 
   while (true) {
@@ -390,7 +483,7 @@ void usercontrol(void) {
 
     if (sticks.ButtonL1.pressing()) intake.spin(forward);
     else if (sticks.ButtonL2.pressing()) intake.spin(reverse);
-    else intake.stop();
+    else if (!reverseIntake) intake.stop();
 /*
     if (sticks.ButtonR1.pressing()) armMotor.spin(forward);
     else if (sticks.ButtonR2.pressing()) armMotor.spin(reverse);
@@ -402,9 +495,9 @@ void usercontrol(void) {
     armLatch.check(sticks.ButtonY.pressing());
 
     if (armLatch.state == 0) {targetArmPosition = 0;}
-    else if (armLatch.state == 1) {targetArmPosition = 120;}
-    else if (armLatch.state == 2){secondStageIntake.spinFor(reverse,80,degrees, false); targetArmPosition = 666;}
-        
+    else if (armLatch.state == 1) {targetArmPosition = 124;}
+    else if (armLatch.state == 2){targetArmPosition = 666;}
+            
     wait(5, msec); 
   }
 }
@@ -414,7 +507,7 @@ void usercontrol(void) {
 //
 int main() {
   // Set up callbacks for autonomous and driver control periods.
-  Competition.autonomous(redSideAutonomous);
+  Competition.autonomous(skills);
   Competition.drivercontrol(usercontrol);
 
   // Run the pre-autonomous function.

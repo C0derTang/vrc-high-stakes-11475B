@@ -16,6 +16,7 @@ double globalY = 0;
 double globalHeading = 0;
 
 double targetArmPosition = 0;
+bool reverseIntake = false;
 
 struct Toggle{
     int states = 2;
