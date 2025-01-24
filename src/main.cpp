@@ -451,15 +451,33 @@ void blueFarSideAutonomous(void) {
 void skills(void){
   reset();
   task odom(odometry);
+  intake.setVelocity(100, percent);
   intake.spin(forward);
   wait(.6,sec);
   intake.stop();
-  driveXInches(-13, 6, 1.4);
+  intake.setVelocity(90,percent);
+  driveXInches(-13, 6, 1.2);
   turnToHeading(86,1);
-  driveXInches(17.5,5,1);
+  driveXInches(22,6,.9);
   clamp.set(true);
   wait(.2,sec);
-  turnToHeading(270,2);
+  driveXInches(-4,6,.1);
+  intake.spin(forward);
+  turnToHeading(353,1);
+  driveXInches(-24, 6, 2);
+  turnToHeading(270,1);
+  driveXInches(-25, 6, 2);
+  turnToHeading(185, 1.5);//
+  driveXInches(-20, 6, 2);
+  driveXInches(-8, 6, 1);
+  driveXInches(6, 6, .5);
+  turnToHeading(270,1);
+  driveXInches(-12, 6, .5);
+  turnToHeading(4,1);
+  clamp.set(false);
+  driveXInches(10, 6, 1);
+  driveXInches(-10, 6, 1);
+  intake.stop();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -517,4 +535,4 @@ int main() {
   while (true) {
     wait(10, msec);
   }
-}
+} 
