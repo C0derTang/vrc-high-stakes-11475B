@@ -14,6 +14,7 @@ double turnImportance = 0.3;
 double globalX = 0;
 double globalY = 0;
 double globalHeading = 0;
+double desiredHeading = 0;
 
 double targetArmPosition = 0;
 bool reverseIntake = false;

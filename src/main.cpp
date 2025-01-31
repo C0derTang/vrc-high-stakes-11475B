@@ -180,6 +180,25 @@ int odometry(){
   return 1;
 }
 
+int headingPID(){
+  while(true){
+    double error = desiredHeading-radToDeg(globalHeading);
+    if (turnError > 180) {
+      turnError -= 360;
+    } else if (turnError < -180) {
+      turnError += 360;
+    }
+    
+    turnPower = headingPID.update(0, -error, 12);
+    
+    leftDrive.spin(forward, -turnPower, voltageUnits::volt);
+    rightDrive.spin(forward, turnPower, voltageUnits::volt);
+
+
+    task::sleep(5);
+  }
+}
+
 // drive functions
 void turnToHeading(double desiredHeading, double waitTime) {
   double turnError = desiredHeading-radToDeg(globalHeading);
