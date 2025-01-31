@@ -215,47 +215,6 @@ void turnToHeading(double desiredHeading, double waitTime) {
   rightDrive.stop();
 }
 
-
-void pointTowardPoint(double targetX, double targetY, bool reverseFacing) {
-  double deltaX = targetX - globalX;
-  double deltaY = targetY - globalY;
-
-  double desiredHeading = atan2(deltaY, deltaX);
-
-  if (reverseFacing) {
-    desiredHeading += PI;
-    desiredHeading = fmod(desiredHeading + 2 * PI, 2 * PI); // Normalize to 0-2PI
-  }
-
-  double turnError = radToDeg(desiredHeading) - radToDeg(globalHeading);
-
-  if (turnError > 180) {
-    turnError -= 360;
-  } else if (turnError < -180) {
-    turnError += 360;
-  }
-  double turnPower =0;
-
-  double counter = abs(turnError)/.55;
-  while (counter > 0) {
-    turnPower = headingPID.update(0, -turnError, 12);
-      leftDrive.spin(forward, -turnPower, voltageUnits::volt);
-      rightDrive.spin(forward, turnPower, voltageUnits::volt);
-
-    turnError = radToDeg(desiredHeading) - radToDeg(globalHeading);
-      if (turnError > 180) {
-    turnError -= 360;
-  } else if (turnError < -180) {
-    turnError += 360;
-  }
-    counter -= 1;
-    wait(10,msec);
-  }
-
-  leftDrive.stop();
-  rightDrive.stop();
-}
-
 void driveXInches(double distance, double maxPower, double waitTime) {
   double initialPosition = -(leftEncoder.position(degrees) + rightEncoder.position(degrees))/2;
   double currentDistance = -(leftEncoder.position(degrees) + rightEncoder.position(degrees))/2-initialPosition;
@@ -290,6 +249,33 @@ void driveXInches(double distance, double maxPower, double waitTime) {
   leftDrive.stop();
   rightDrive.stop();
 }
+
+
+
+void pointTowardPoint(double targetX, double targetY, bool reverseFacing) {
+  double deltaX = targetX - globalX;
+  double deltaY = targetY - globalY;
+
+  double desiredHeading = atan2(deltaY, deltaX);
+
+  if (reverseFacing) {
+    desiredHeading += PI;
+    desiredHeading = fmod(desiredHeading + 2 * PI, 2 * PI); // Normalize to 0-2PI
+  }
+
+  turnToHeading(radToDeg(desiredHeading), 2);
+}
+
+void driveToPoint(double targetX, double targetY, double offset, bool reverseFacing){
+  pointTowardPoint(targetX, targetY, backwards);
+  deltaX = targetX - globalX;
+  deltaY = targetY - globalY;
+  travelDistance = sqrt(deltaX*deltaX + deltaY*deltaY);
+  if (reverseFacing) travelDistance *= -1;
+  driveXInches(travelDistance)
+}
+
+
 
 int armControlThread(){
   while(true){ 
@@ -455,7 +441,7 @@ void skills(void){
   intake.spin(forward);
   wait(.6,sec);
   intake.stop();
-  intake.setVelocity(90,percent);
+  intake.setVelocity(75,percent);
   driveXInches(-13, 6, 1.2);
   turnToHeading(86,1);
   driveXInches(22,6,.9);
@@ -477,6 +463,15 @@ void skills(void){
   clamp.set(false);
   driveXInches(10, 6, 1);
   driveXInches(-10, 6, 1);
+  //new
+  turnToHeading(270,1);
+  driveXInches(100, 6, 5);
+  clamp.set(true);
+  turnToHeading(330, 1);
+  driveXInches(14, 6, 1.2);
+  clamp.set(false);
+  driveXInches(-14, 6, 1.2);
+
   intake.stop();
 }
 
@@ -510,7 +505,7 @@ void usercontrol(void) {
     clampLatch.check(sticks.ButtonX.pressing());
     clamp.set(clampLatch.state);
 
-    armLatch.check(sticks.ButtonY.pressing());
+    armLatch.check(sticks.ButtonR1.pressing());
 
     if (armLatch.state == 0) {targetArmPosition = 0;}
     else if (armLatch.state == 1) {targetArmPosition = 124;}
