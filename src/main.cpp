@@ -500,7 +500,7 @@ void usercontrol(void) {
 /*
     if (sticks.ButtonR1.pressing()) armMotor.spin(forward);
     else if (sticks.ButtonR2.pressing()) armMotor.spin(reverse);
-    else armMotor.stop();*/
+    else armMotor.stop(); lmfao*/
 
     clampLatch.check(sticks.ButtonX.pressing());
     clamp.set(clampLatch.state);
